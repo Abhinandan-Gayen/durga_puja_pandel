@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "67441311343",
+    "project_id": "hackthon2026-aa0ae",
+    "storage_bucket": "hackthon2026-aa0ae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67441311343:android:b8adcc3c8f729a8045d79a",
+        "android_client_info": {
+          "package_name": "com.example.durga_puja_pandel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpy2gvlyxkg_0JHmocQ_pxwb4GHzJB1Dg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
