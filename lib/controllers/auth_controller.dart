@@ -84,8 +84,11 @@ class AuthController extends ChangeNotifier {
   Future<void> fetchCurrentUserData() async {
     final user = _authService.currentUser;
     firebaseUser = user;
+
     if (user == null) {
       currentUserModel = null;
+      isLoading = false;
+      errorMessage = null;
       notifyListeners();
       return;
     }
@@ -93,10 +96,23 @@ class AuthController extends ChangeNotifier {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
+
     try {
-      currentUserModel = await _firestoreService.fetchUser(user.uid);
-    } catch (error) {
+      currentUserModel = await _firestoreService
+          .fetchUser(user.uid)
+          .timeout(const Duration(seconds: 8));
+
+      debugPrint(
+        'Current user loaded: ${currentUserModel?.email}, '
+        'role: ${currentUserModel?.role}',
+      );
+    } on TimeoutException {
+      errorMessage = 'Unable to connect to Firestore. Request timed out.';
+      debugPrint('fetchCurrentUserData: Firestore timeout');
+    } catch (error, stackTrace) {
       errorMessage = error.toString();
+      debugPrint('fetchCurrentUserData error: $error');
+      debugPrintStack(stackTrace: stackTrace);
     } finally {
       isLoading = false;
       notifyListeners();

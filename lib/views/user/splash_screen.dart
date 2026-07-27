@@ -17,23 +17,38 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(milliseconds: 900), () async {
-      if (!mounted) {
-        return;
-      }
-      final auth = context.read<AuthController>();
-      await auth.fetchCurrentUserData();
-      if (!mounted) {
-        return;
-      }
-      context.goNamed(
-        auth.isLoggedIn
-            ? auth.isAdmin
-                  ? RouteNames.adminDashboard
-                  : RouteNames.home
-            : RouteNames.onboarding,
-      );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
     });
+  }
+
+  Future<void> _initializeApp() async {
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+
+    if (!mounted) return;
+
+    final auth = context.read<AuthController>();
+
+    try {
+      await auth.fetchCurrentUserData().timeout(const Duration(seconds: 10));
+    } catch (error) {
+      debugPrint('Splash initialization error: $error');
+    }
+
+    if (!mounted) return;
+
+    if (!auth.isLoggedIn) {
+      context.goNamed(RouteNames.onboarding);
+      return;
+    }
+
+    if (auth.isAdmin) {
+      context.goNamed(RouteNames.adminDashboard);
+      return;
+    }
+
+    context.goNamed(RouteNames.home);
   }
 
   @override
