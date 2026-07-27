@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -14,53 +16,73 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Timer? _fallback;
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
+    final auth = context.read<AuthController>();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeApp();
+    if (auth.isInitialized) {
+      _go(auth);
+      return;
+    }
+
+    auth.addListener(_onAuthChanged);
+
+    _fallback = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      context.read<AuthController>().removeListener(_onAuthChanged);
+      if (!_navigated) {
+        _navigated = true;
+        context.goNamed(RouteNames.onboarding);
+      }
     });
   }
 
-  Future<void> _initializeApp() async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+  void _onAuthChanged() {
+    if (!mounted || _navigated) return;
+    final ctrl = context.read<AuthController>();
+    if (ctrl.isInitialized) {
+      _fallback?.cancel();
+      ctrl.removeListener(_onAuthChanged);
+      _go(ctrl);
+    }
+  }
 
-    if (!mounted) return;
+  void _go(AuthController auth) {
+    _navigated = true;
+    final target = auth.isLoggedIn
+        ? (auth.isAdmin ? RouteNames.adminDashboard : RouteNames.home)
+        : RouteNames.onboarding;
+    context.goNamed(target);
+  }
 
-    final auth = context.read<AuthController>();
-
+  @override
+  void dispose() {
+    _fallback?.cancel();
     try {
-      await auth.fetchCurrentUserData().timeout(const Duration(seconds: 10));
-    } catch (error) {
-      debugPrint('Splash initialization error: $error');
-    }
-
-    if (!mounted) return;
-
-    if (!auth.isLoggedIn) {
-      context.goNamed(RouteNames.onboarding);
-      return;
-    }
-
-    if (auth.isAdmin) {
-      context.goNamed(RouteNames.adminDashboard);
-      return;
-    }
-
-    context.goNamed(RouteNames.home);
+      context.read<AuthController>().removeListener(_onAuthChanged);
+    } catch (_) {}
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.temple_hindu, size: 76),
-            SizedBox(height: 16),
-            Text(AppConstants.appName),
+            const Icon(Icons.temple_hindu, size: 76),
+            const SizedBox(height: 16),
+            Text(
+              AppConstants.appName,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(),
           ],
         ),
       ),
