@@ -17,45 +17,49 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   Timer? _fallback;
-  bool _navigated = false;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
     final auth = context.read<AuthController>();
 
-    if (auth.isInitialized) {
-      _go(auth);
-      return;
-    }
-
     auth.addListener(_onAuthChanged);
 
     _fallback = Timer(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      context.read<AuthController>().removeListener(_onAuthChanged);
-      if (!_navigated) {
-        _navigated = true;
-        context.goNamed(RouteNames.onboarding);
-      }
+      if (!mounted || _hasNavigated) return;
+      _navigate(context.read<AuthController>(), forceOnboarding: true);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasNavigated) return;
+      _navigate(context.read<AuthController>());
     });
   }
 
   void _onAuthChanged() {
-    if (!mounted || _navigated) return;
-    final ctrl = context.read<AuthController>();
-    if (ctrl.isInitialized) {
-      _fallback?.cancel();
-      ctrl.removeListener(_onAuthChanged);
-      _go(ctrl);
-    }
+    if (!mounted || _hasNavigated) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasNavigated) return;
+      _navigate(context.read<AuthController>());
+    });
   }
 
-  void _go(AuthController auth) {
-    _navigated = true;
-    final target = auth.isLoggedIn
-        ? (auth.isAdmin ? RouteNames.adminDashboard : RouteNames.home)
-        : RouteNames.onboarding;
+  void _navigate(AuthController auth, {bool forceOnboarding = false}) {
+    if (_hasNavigated) return;
+
+    if (!forceOnboarding && !auth.isInitialized) return;
+
+    _hasNavigated = true;
+    _fallback?.cancel();
+    auth.removeListener(_onAuthChanged);
+
+    final target = forceOnboarding
+        ? RouteNames.onboarding
+        : auth.isLoggedIn
+            ? (auth.isAdmin ? RouteNames.adminDashboard : RouteNames.home)
+            : RouteNames.onboarding;
+
     context.goNamed(target);
   }
 
