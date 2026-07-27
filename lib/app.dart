@@ -9,6 +9,7 @@ import 'controllers/map_controller.dart';
 import 'controllers/pandal_controller.dart';
 import 'controllers/review_controller.dart';
 import 'controllers/search_filter_controller.dart';
+import 'controllers/theme_controller.dart';
 import 'core/services/cloudinary_service.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'core/services/firestore_service.dart';
@@ -17,8 +18,22 @@ import 'core/services/map_service.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 
-class PujoPandalGuideApp extends StatelessWidget {
+class PujoPandalGuideApp extends StatefulWidget {
   const PujoPandalGuideApp({super.key});
+
+  @override
+  State<PujoPandalGuideApp> createState() => _PujoPandalGuideAppState();
+}
+
+class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
+  late final ThemeController _themeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeController = ThemeController();
+    _themeController.load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +50,9 @@ class PujoPandalGuideApp extends StatelessWidget {
         Provider<CloudinaryService>.value(value: cloudinaryService),
         Provider<LocationService>.value(value: locationService),
         Provider<MapService>.value(value: mapService),
+        ChangeNotifierProvider<ThemeController>.value(
+          value: _themeController,
+        ),
         ChangeNotifierProvider(
           create: (_) => AuthController(authService, firestoreService),
         ),
@@ -65,14 +83,16 @@ class PujoPandalGuideApp extends StatelessWidget {
           create: (_) => MapController(mapService, locationService),
         ),
       ],
-      child: Consumer<AuthController>(
-        builder: (context, authController, _) {
+      child: Consumer2<AuthController, ThemeController>(
+        builder: (context, authController, themeController, _) {
           final router = AppRoutes.createRouter(authController);
 
           return MaterialApp.router(
             title: 'Pujo Pandal Guide',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeController.themeMode,
             routerConfig: router,
           );
         },

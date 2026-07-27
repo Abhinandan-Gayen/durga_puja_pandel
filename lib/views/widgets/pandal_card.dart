@@ -8,44 +8,80 @@ import '../../routes/route_names.dart';
 import 'crowd_level_chip.dart';
 import 'rating_widget.dart';
 
-class PandalCard extends StatelessWidget {
+class PandalCard extends StatefulWidget {
   const PandalCard({
     super.key,
     required this.pandal,
     this.distanceKm,
     this.compact = false,
+    this.isPremium = false,
   });
 
   final PandalModel pandal;
   final double? distanceKm;
   final bool compact;
+  final bool isPremium;
+
+  @override
+  State<PandalCard> createState() => _PandalCardState();
+}
+
+class _PandalCardState extends State<PandalCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _fadeScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fadeScale = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = pandal.thumbnailUrl.isNotEmpty
-        ? pandal.thumbnailUrl
-        : pandal.images.isEmpty
+    final imageUrl = widget.pandal.thumbnailUrl.isNotEmpty
+        ? widget.pandal.thumbnailUrl
+        : widget.pandal.images.isEmpty
         ? null
-        : pandal.images.first;
+        : widget.pandal.images.first;
 
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => context.pushNamed(
-          RouteNames.pandalDetail,
-          pathParameters: {'id': pandal.id},
+    return ScaleTransition(
+      scale: _fadeScale,
+      child: FadeTransition(
+        opacity: _fadeScale,
+        child: Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => context.pushNamed(
+              RouteNames.pandalDetail,
+              pathParameters: {'id': widget.pandal.id},
+            ),
+            child: widget.compact
+                ? _CompactContent(
+                    pandal: widget.pandal,
+                    imageUrl: imageUrl,
+                    distanceKm: widget.distanceKm,
+                    isPremium: widget.isPremium,
+                  )
+                : _FullContent(
+                    pandal: widget.pandal,
+                    imageUrl: imageUrl,
+                    distanceKm: widget.distanceKm,
+                    isPremium: widget.isPremium,
+                  ),
+          ),
         ),
-        child: compact
-            ? _CompactContent(
-                pandal: pandal,
-                imageUrl: imageUrl,
-                distanceKm: distanceKm,
-              )
-            : _FullContent(
-                pandal: pandal,
-                imageUrl: imageUrl,
-                distanceKm: distanceKm,
-              ),
       ),
     );
   }
@@ -56,18 +92,24 @@ class _FullContent extends StatelessWidget {
     required this.pandal,
     required this.imageUrl,
     required this.distanceKm,
+    this.isPremium = false,
   });
 
   final PandalModel pandal;
   final String? imageUrl;
   final double? distanceKm;
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PandalImage(imageUrl: imageUrl, isFeatured: pandal.isFeatured),
+        _PandalImage(
+          imageUrl: imageUrl,
+          isFeatured: pandal.isFeatured,
+          isPremium: isPremium,
+        ),
         Padding(
           padding: const EdgeInsets.all(12),
           child: _PandalDetails(pandal: pandal, distanceKm: distanceKm),
@@ -82,11 +124,13 @@ class _CompactContent extends StatelessWidget {
     required this.pandal,
     required this.imageUrl,
     required this.distanceKm,
+    this.isPremium = false,
   });
 
   final PandalModel pandal;
   final String? imageUrl;
   final double? distanceKm;
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +142,7 @@ class _CompactContent extends StatelessWidget {
           _PandalImage(
             imageUrl: imageUrl,
             isFeatured: pandal.isFeatured,
+            isPremium: isPremium,
             height: 118,
           ),
           Padding(
@@ -118,17 +163,19 @@ class _PandalImage extends StatelessWidget {
   const _PandalImage({
     required this.imageUrl,
     required this.isFeatured,
+    this.isPremium = false,
     this.height = 150,
   });
 
   final String? imageUrl;
   final bool isFeatured;
+  final bool isPremium;
   final double height;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       child: Stack(
         children: [
           SizedBox(
@@ -147,6 +194,42 @@ class _PandalImage extends StatelessWidget {
                     errorWidget: (_, _, _) => const Icon(Icons.broken_image),
                   ),
           ),
+          if (isPremium)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.premiumGold, Color(0xFFFFB300)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.premiumGold.withValues(alpha: 0.4),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.diamond, size: 12, color: Colors.black87),
+                    SizedBox(width: 4),
+                    Text(
+                      'Premium',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           if (isFeatured)
             Positioned(
               top: 10,

@@ -15,6 +15,7 @@ import '../views/user/map_screen.dart';
 import '../views/user/onboarding_screen.dart';
 import '../views/user/pandal_detail_screen.dart';
 import '../views/user/pandal_list_screen.dart';
+import '../views/user/premium_screen.dart';
 import '../views/user/profile_screen.dart';
 import '../views/user/route_planner_screen.dart';
 import '../views/user/search_screen.dart';
@@ -122,6 +123,11 @@ class AppRoutes {
           path: '/profile',
           name: RouteNames.profile,
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/premium',
+          name: RouteNames.premium,
+          builder: (context, state) => const PremiumScreen(),
         ),
         GoRoute(
           path: '/admin',
