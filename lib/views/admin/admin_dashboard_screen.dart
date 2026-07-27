@@ -19,11 +19,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_hasRequestedData) {
-      return;
-    }
+    if (_hasRequestedData) return;
     _hasRequestedData = true;
-    context.read<AdminPandalController>().fetchAllPandalsForAdmin();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AdminPandalController>().fetchAllPandalsForAdmin();
+    });
   }
 
   @override

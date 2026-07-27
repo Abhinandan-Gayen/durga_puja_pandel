@@ -19,6 +19,8 @@ class AdminPandalController extends ChangeNotifier {
   MediaModel? lastUploadedMedia;
   List<PandalModel> adminPandals = [];
 
+  bool _isFetching = false;
+
   int get totalPandals => adminPandals.length;
   int get activePandals =>
       adminPandals.where((pandal) => pandal.isActive).length;
@@ -28,29 +30,29 @@ class AdminPandalController extends ChangeNotifier {
       adminPandals.fold<int>(0, (sum, pandal) => sum + pandal.totalReviews);
 
   Future<String?> addPandal(PandalModel pandal) async {
-    return _run<String?>(() async {
+    return _guardRun<String?>(() async {
       final id = await _firestoreService.addDocument(
         collectionPath: FirebaseConstants.pandalsCollection,
         data: pandal.toMap(),
       );
-      await fetchAllPandalsForAdmin();
+      await _fetchAll();
       return id;
     });
   }
 
   Future<void> updatePandal(PandalModel pandal) async {
-    await _run<void>(() async {
+    await _guardRun<void>(() async {
       await _firestoreService.updateDocument(
         collectionPath: FirebaseConstants.pandalsCollection,
         documentId: pandal.id,
         data: pandal.toMap(),
       );
-      await fetchAllPandalsForAdmin();
+      await _fetchAll();
     });
   }
 
   Future<void> deletePandal(String pandalId) async {
-    await _run<void>(() async {
+    await _guardRun<void>(() async {
       await _firestoreService.deleteDocument(
         collectionPath: FirebaseConstants.pandalsCollection,
         documentId: pandalId,
@@ -61,13 +63,8 @@ class AdminPandalController extends ChangeNotifier {
   }
 
   Future<void> fetchAllPandalsForAdmin() async {
-    await _run<void>(() async {
-      final data = await _firestoreService.getCollection(
-        collectionPath: FirebaseConstants.pandalsCollection,
-      );
-      adminPandals = data.map(PandalModel.fromMap).toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    });
+    if (_isFetching) return;
+    await _guardRun<void>(() => _fetchAll());
   }
 
   Future<void> toggleActiveStatus(PandalModel pandal) async {
@@ -79,7 +76,7 @@ class AdminPandalController extends ChangeNotifier {
   }
 
   Future<String?> uploadThumbnail(File file) async {
-    return _run<String?>(() async {
+    return _guardRun<String?>(() async {
       final media = await _cloudinaryService.uploadImage(file);
       lastUploadedMedia = media;
       return media?.url;
@@ -87,7 +84,7 @@ class AdminPandalController extends ChangeNotifier {
   }
 
   Future<List<String>> uploadImages(List<File> files) async {
-    return _run<List<String>>(() async {
+    return _guardRun<List<String>>(() async {
       final mediaList = await _cloudinaryService.uploadMultipleImages(files);
       if (mediaList.isNotEmpty) {
         lastUploadedMedia = mediaList.last;
@@ -97,7 +94,7 @@ class AdminPandalController extends ChangeNotifier {
   }
 
   Future<List<String>> uploadVideos(List<File> files) async {
-    return _run<List<String>>(() async {
+    return _guardRun<List<String>>(() async {
       final mediaList = await _cloudinaryService.uploadMultipleVideos(files);
       if (mediaList.isNotEmpty) {
         lastUploadedMedia = mediaList.last;
@@ -111,9 +108,8 @@ class AdminPandalController extends ChangeNotifier {
     required String fileName,
     required String mediaType,
   }) async {
-    return _run<MediaModel?>(
-      () =>
-          _uploadSingle(bytes: bytes, fileName: fileName, mediaType: mediaType),
+    return _guardRun<MediaModel?>(
+      () => _uploadSingle(bytes: bytes, fileName: fileName, mediaType: mediaType),
     );
   }
 
@@ -139,7 +135,17 @@ class AdminPandalController extends ChangeNotifier {
     return media;
   }
 
-  Future<T?> _run<T>(Future<T> Function() action) async {
+  Future<void> _fetchAll() async {
+    _isFetching = true;
+    final data = await _firestoreService.getCollection(
+      collectionPath: FirebaseConstants.pandalsCollection,
+    );
+    adminPandals = data.map(PandalModel.fromMap).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    _isFetching = false;
+  }
+
+  Future<T?> _guardRun<T>(Future<T> Function() action) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
