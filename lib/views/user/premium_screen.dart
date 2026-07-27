@@ -218,12 +218,12 @@ class _PremiumScreenState extends State<PremiumScreen>
 
   Widget _buildFeatures() {
     const features = [
-      (_icon: Icons.notifications_active, _title: 'Real-time Crowd Alerts', _desc: 'Get notified when crowd levels change at your saved pandals'),
-      (_icon: Icons.route, _title: 'AI-Powered Routes', _desc: 'Smart route planning to avoid traffic and maximize pandal visits'),
-      (_icon: Icons.hd, _title: 'HD Photo Downloads', _desc: 'Download high-resolution pandal photos for your collection'),
-      (_icon: Icons.verified, _title: 'Verified Badge', _desc: 'Stand out with a premium verified badge on your profile'),
-      (_icon: Icons.auto_awesome, _title: 'Ad-Free Experience', _desc: 'Enjoy the app without any distractions or advertisements'),
-      (_icon: Icons.support_agent, _title: 'Priority Support', _desc: 'Get 24/7 priority customer support whenever you need help'),
+      (icon: Icons.notifications_active, title: 'Real-time Crowd Alerts', desc: 'Get notified when crowd levels change at your saved pandals'),
+      (icon: Icons.route, title: 'AI-Powered Routes', desc: 'Smart route planning to avoid traffic and maximize pandal visits'),
+      (icon: Icons.hd, title: 'HD Photo Downloads', desc: 'Download high-resolution pandal photos for your collection'),
+      (icon: Icons.verified, title: 'Verified Badge', desc: 'Stand out with a premium verified badge on your profile'),
+      (icon: Icons.auto_awesome, title: 'Ad-Free Experience', desc: 'Enjoy the app without any distractions or advertisements'),
+      (icon: Icons.support_agent, title: 'Priority Support', desc: 'Get 24/7 priority customer support whenever you need help'),
     ];
 
     return FadeTransition(
@@ -244,7 +244,7 @@ class _PremiumScreenState extends State<PremiumScreen>
               ),
             ),
           ),
-          for (final f in features) _FeatureTile(icon: f._icon, title: f._title, desc: f._desc),
+          for (final f in features) _FeatureTile(icon: f.icon, title: f.title, desc: f.desc),
         ],
       ),
     );
