@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +33,7 @@ class PandalFormScreen extends StatefulWidget {
 }
 
 class _PandalFormScreenState extends State<PandalFormScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _imagePicker = ImagePicker();
   late final TextEditingController _nameController;
@@ -80,8 +79,12 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _nearbyTransportController = TextEditingController(
       text: pandal.nearbyTransport.join('\n'),
     );
-    _city = pandal.city;
-    _crowdLevel = pandal.crowdLevel;
+    _city = AppConstants.supportedCities.contains(pandal.city)
+        ? pandal.city
+        : AppConstants.supportedCities.first;
+    _crowdLevel = AppConstants.crowdLevels.contains(pandal.crowdLevel)
+        ? pandal.crowdLevel
+        : AppConstants.crowdLevels.first;
     _isFeatured = pandal.isFeatured;
     _isActive = pandal.isActive;
     _parkingAvailable = pandal.parkingAvailable;
@@ -139,13 +142,13 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       area: _areaController.text.trim(),
       address: _addressController.text.trim(),
       description: _descriptionController.text.trim(),
-      latitude: double.parse(_latitudeController.text.trim()),
-      longitude: double.parse(_longitudeController.text.trim()),
+      latitude: double.tryParse(_latitudeController.text.trim()) ?? 0.0,
+      longitude: double.tryParse(_longitudeController.text.trim()) ?? 0.0,
       themeName: _themeNameController.text.trim(),
       organizerName: _organizerNameController.text.trim(),
       openingTime: _openingTimeController.text.trim(),
       closingTime: _closingTimeController.text.trim(),
-      entryFee: double.parse(_entryFeeController.text.trim()),
+      entryFee: double.tryParse(_entryFeeController.text.trim()) ?? 0.0,
       crowdLevel: _crowdLevel,
       isFeatured: _isFeatured,
       isActive: _isActive,
@@ -157,10 +160,16 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       createdBy: initial.createdBy.isEmpty ? uid : initial.createdBy,
     );
     final admin = context.read<AdminPandalController>();
-    if (initial.id.isEmpty) {
-      await admin.addPandal(pandal);
-    } else {
-      await admin.updatePandal(pandal);
+    try {
+      if (initial.id.isEmpty) {
+        await admin.addPandal(pandal);
+      } else {
+        await admin.updatePandal(pandal);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      SnackbarHelper.showError(context, admin.errorMessage ?? 'Save failed');
+      return;
     }
     if (!mounted) return;
     if (admin.errorMessage != null) {
@@ -172,48 +181,83 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   }
 
   Future<void> _uploadThumbnail() async {
-    final file = await _pickSingleImage();
-    if (file == null || !mounted) return;
-    final url = await context.read<AdminPandalController>().uploadThumbnail(file);
-    if (!mounted) return;
-    if (url == null) {
+    try {
+      final file = await _pickSingleImage();
+      if (file == null || !mounted) return;
+      final url =
+          await context.read<AdminPandalController>().uploadThumbnail(file);
+      if (!mounted) return;
+      if (url == null) {
+        SnackbarHelper.showError(
+          context,
+          context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
+        );
+        return;
+      }
+      setState(() => _thumbnailUrl = url);
+    } catch (_) {
+      if (!mounted) return;
       SnackbarHelper.showError(
         context,
         context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
       );
-      return;
     }
-    setState(() => _thumbnailUrl = url);
   }
 
   Future<void> _uploadImages() async {
-    final files = await _pickMultipleImages();
-    if (files.isEmpty || !mounted) return;
-    final urls = await context.read<AdminPandalController>().uploadImages(files);
-    if (!mounted) return;
-    if (urls.isEmpty) {
+    try {
+      final files = await _pickMultipleImages();
+      if (files.isEmpty || !mounted) return;
+      final urls =
+          await context.read<AdminPandalController>().uploadImages(files);
+      if (!mounted) return;
+      if (urls.isEmpty) {
+        SnackbarHelper.showError(
+          context,
+          context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
+        );
+        return;
+      }
+      setState(() {
+        for (final url in urls) {
+          if (!_imageUrls.contains(url)) _imageUrls.add(url);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
       SnackbarHelper.showError(
         context,
         context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
       );
-      return;
     }
-    setState(() => _imageUrls.addAll(urls));
   }
 
   Future<void> _uploadVideos() async {
-    final files = await _pickMultipleVideos();
-    if (files.isEmpty || !mounted) return;
-    final urls = await context.read<AdminPandalController>().uploadVideos(files);
-    if (!mounted) return;
-    if (urls.isEmpty) {
+    try {
+      final files = await _pickMultipleVideos();
+      if (files.isEmpty || !mounted) return;
+      final urls =
+          await context.read<AdminPandalController>().uploadVideos(files);
+      if (!mounted) return;
+      if (urls.isEmpty) {
+        SnackbarHelper.showError(
+          context,
+          context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
+        );
+        return;
+      }
+      setState(() {
+        for (final url in urls) {
+          if (!_videoUrls.contains(url)) _videoUrls.add(url);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
       SnackbarHelper.showError(
         context,
         context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
       );
-      return;
     }
-    setState(() => _videoUrls.addAll(urls));
   }
 
   Future<File?> _pickSingleImage() async {
@@ -254,7 +298,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       opacity: _anim,
       child: SlideTransition(
         position: Tween<Offset>(
-          begin: Offset(0, 0.15 + (Random().nextDouble() * 0.05)),
+          begin: Offset(0, 0.15 + (index * 0.03)),
           end: Offset.zero,
         ).animate(CurvedAnimation(
           parent: _anim,
@@ -652,8 +696,9 @@ class _Dropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeValue = items.contains(value) ? value : null;
     return DropdownButtonFormField<T>(
-      value: value,
+      value: safeValue,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
