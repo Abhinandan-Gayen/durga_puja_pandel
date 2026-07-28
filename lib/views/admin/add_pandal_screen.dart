@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/admin_pandal_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/location_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/snackbar_helper.dart';
 import '../../core/utils/validators.dart';
 import '../../models/pandal_model.dart';
+import 'location_picker_screen.dart';
 
 class AddPandalScreen extends StatelessWidget {
   const AddPandalScreen({super.key});
@@ -51,6 +55,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   late bool _isFeatured;
   late bool _isActive;
   late bool _parkingAvailable;
+
+  bool _locationLoading = false;
+  LocationPickerResult? _locationPreview;
 
   late final AnimationController _anim;
   late final AnimationController _pulseAnim;
@@ -183,6 +190,156 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   int get _galleryUrlCount => _parseUrls(_galleryUrlsController.text).length;
   int get _videoUrlCount => _parseUrls(_videoUrlsController.text).length;
 
+  // ─── location ───
+
+  void _setCityFromReverseGeocode(String? cityName) {
+    if (cityName == null || cityName.trim().isEmpty) return;
+    final match = AppConstants.supportedCities.firstWhere(
+      (c) => c.toLowerCase() == cityName.trim().toLowerCase(),
+      orElse: () => '',
+    );
+    if (match.isNotEmpty) {
+      _city = match;
+    }
+  }
+
+  void _applyPlacemark(Placemark pm) {
+    final area = pm.subLocality?.isNotEmpty == true
+        ? pm.subLocality!
+        : (pm.locality?.isNotEmpty == true ? pm.locality! : '');
+    if (area.isNotEmpty) {
+      _areaController.text = area;
+    }
+
+    _setCityFromReverseGeocode(pm.administrativeArea ?? pm.locality);
+  }
+
+  Future<void> _resolveCurrentLocation() async {
+    if (_locationLoading) return;
+    setState(() => _locationLoading = true);
+    try {
+      final locationService = context.read<LocationService>();
+
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
+      if (!serviceEnabled) {
+        SnackbarHelper.showError(
+          context,
+          'Location services are disabled. Please enable them in Settings.',
+        );
+        return;
+      }
+
+      final granted = await locationService.requestLocationPermission();
+      if (!mounted) return;
+      if (!granted) {
+        SnackbarHelper.showError(context, 'Location permission denied.');
+        return;
+      }
+
+      Position? position;
+      try {
+        position = await locationService
+            .getCurrentPosition()
+            .timeout(const Duration(seconds: 15));
+      } catch (_) {
+        if (mounted) {
+          SnackbarHelper.showError(
+            context,
+            'Unable to fetch current location. Please try again.',
+          );
+        }
+        return;
+      }
+      if (position == null || !mounted) return;
+
+      List<Placemark> placemarks;
+      try {
+        placemarks =
+            await placemarkFromCoordinates(
+              position.latitude,
+              position.longitude,
+            );
+      } catch (_) {
+        placemarks = [];
+      }
+      if (!mounted) return;
+
+      if (placemarks.isNotEmpty) {
+        _applyPlacemark(placemarks.first);
+      }
+
+      final addressParts = placemarks.isNotEmpty
+          ? [
+              placemarks.first.name,
+              placemarks.first.subLocality,
+              placemarks.first.locality,
+              placemarks.first.administrativeArea,
+              placemarks.first.country,
+            ].where((e) => e != null && e.isNotEmpty).join(', ')
+          : '';
+      if (addressParts.isNotEmpty) {
+        _addressController.text = addressParts;
+      }
+
+      _latitudeController.text = position.latitude.toStringAsFixed(6);
+      _longitudeController.text = position.longitude.toStringAsFixed(6);
+
+      setState(() {
+        _locationPreview = LocationPickerResult(
+          latitude: position!.latitude,
+          longitude: position!.longitude,
+          area: _areaController.text,
+          city: _city,
+          address: _addressController.text,
+        );
+      });
+    } catch (e) {
+      if (mounted) {
+        SnackbarHelper.showError(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _locationLoading = false);
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    final lat = double.tryParse(_latitudeController.text.trim()) ?? 22.5726;
+    final lng = double.tryParse(_longitudeController.text.trim()) ?? 88.3639;
+
+    final result = await Navigator.of(context).push<LocationPickerResult>(
+      MaterialPageRoute(
+        builder: (_) => LocationPickerScreen(
+          initialLatitude: lat,
+          initialLongitude: lng,
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    _latitudeController.text = result.latitude.toStringAsFixed(6);
+    _longitudeController.text = result.longitude.toStringAsFixed(6);
+
+    _setCityFromReverseGeocode(result.city);
+
+    if (result.address != null && result.address!.isNotEmpty) {
+      _addressController.text = result.address!;
+    }
+
+    if (result.area != null && result.area!.isNotEmpty) {
+      _areaController.text = result.area!;
+    }
+
+    setState(() => _locationPreview = result);
+  }
+
+  void _clearLocationPreview() {
+    setState(() => _locationPreview = null);
+  }
+
   // ─── submit ───
 
   Future<void> _submit() async {
@@ -202,6 +359,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       return;
     }
 
+    final lat = double.tryParse(_latitudeController.text.trim()) ?? 0.0;
+    final lng = double.tryParse(_longitudeController.text.trim()) ?? 0.0;
+
     final initial = widget.initialPandal ?? PandalModel.empty();
     final uid = context.read<AuthController>().firebaseUser?.uid ?? '';
     final pandal = initial.copyWith(
@@ -210,8 +370,8 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       area: _areaController.text.trim(),
       address: _addressController.text.trim(),
       description: _descriptionController.text.trim(),
-      latitude: double.tryParse(_latitudeController.text.trim()) ?? 0.0,
-      longitude: double.tryParse(_longitudeController.text.trim()) ?? 0.0,
+      latitude: lat,
+      longitude: lng,
       themeName: _themeNameController.text.trim(),
       organizerName: _organizerNameController.text.trim(),
       openingTime: _openingTimeController.text.trim(),
@@ -281,23 +441,118 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     );
   }
 
+  Widget _buildLocationPreview() {
+    final preview = _locationPreview;
+    if (preview == null) return _sep(0);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.deepRed.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.deepRed.withValues(alpha: 0.18),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined,
+                    size: 18, color: AppColors.deepRed),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    preview.address?.isNotEmpty == true
+                        ? preview.address!
+                        : 'Location selected',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.deepRed,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _clearLocationPreview,
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Text(
+                      'Change',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.vermilion,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.pin_drop_outlined,
+                    size: 16, color: AppColors.deepRed),
+                const SizedBox(width: 6),
+                Text(
+                  '${preview.latitude.toStringAsFixed(6)}, ${preview.longitude.toStringAsFixed(6)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationActions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _LocationActionButton(
+              icon: Icons.my_location_rounded,
+              label: 'Use Current Location',
+              isLoading: _locationLoading,
+              onTap: _resolveCurrentLocation,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _LocationActionButton(
+              icon: Icons.map_rounded,
+              label: 'Select on Map',
+              onTap: _openMapPicker,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.initialPandal != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // UI FIXED: অ্যাপবার এবং উপরের অংশের জন্য একই গ্রেডিয়েন্ট কালার ব্যবহার করা হলো
     final gradientColors = isDark
         ? const [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)]
         : [AppColors.deepRed, AppColors.vermilion, const Color(0xFFC62828)];
 
     return Scaffold(
-      // UI FIXED: extendBodyBehindAppBar সরানো হয়েছে
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Pandal' : 'New Pandal'),
         elevation: 0,
-        scrolledUnderElevation:
-            0, // UI FIXED: স্ক্রল করার সময় অ্যাপবারের রঙ পরিবর্তন হওয়া আটকাতে
+        scrolledUnderElevation: 0,
         backgroundColor: gradientColors.first,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -311,7 +566,6 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    // UI FIXED: ফিক্সড ব্যাকগ্রাউন্ডের বদলে হেডারের সাথেই গ্রেডিয়েন্ট স্ক্রল হবে
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -373,6 +627,8 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                               title: 'Location',
                               icon: Icons.location_on_outlined,
                               children: [
+                                _buildLocationActions(),
+                                _buildLocationPreview(),
                                 _Field(
                                   _areaController,
                                   'Area',
@@ -584,11 +840,11 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                   ),
                                 ),
                                 _sep(16),
-                                _Field(
+                                _MultilineField(
                                   _galleryUrlsController,
                                   'Gallery Image URLs',
                                   Icons.collections_rounded,
-                                  hint: 'Enter one image URL per line',
+                                  hint: 'Enter one public image URL per line',
                                   minLines: 4,
                                   maxLines: 7,
                                   validator: _validateUrlList,
@@ -606,12 +862,12 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                   ),
                                 ),
                                 _sep(16),
-                                _Field(
+                                _MultilineField(
                                   _videoUrlsController,
                                   'Video URLs',
                                   Icons.videocam_rounded,
                                   hint:
-                                      'Enter one video URL per line (maximum 2)',
+                                      'Enter one public video URL per line',
                                   minLines: 3,
                                   maxLines: 5,
                                   validator: (v) {
@@ -684,7 +940,6 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // UI FIXED: ম্যানুয়াল topPad সরানো হয়েছে কারণ এখন Scaffold নিজে থেকে সেইভ এরিয়া হ্যান্ডেল করবে।
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -1151,6 +1406,161 @@ class _CrowdSelector extends StatelessWidget {
   }
 }
 
+// ─── location action button ───
+
+class _LocationActionButton extends StatelessWidget {
+  const _LocationActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.deepRed.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: isLoading ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.deepRed,
+                      ),
+                    )
+                  : Icon(icon, size: 20, color: AppColors.deepRed),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.deepRed,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── multiline field ───
+
+class _MultilineField extends StatelessWidget {
+  const _MultilineField(
+    this.controller,
+    this.label,
+    this.icon, {
+    this.hint,
+    this.validator,
+    this.maxLines = 4,
+    this.minLines = 3,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final String? hint;
+  final String? Function(String?)? validator;
+  final int maxLines;
+  final int? minLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.deepRed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: AppColors.deepRed),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextFormField(
+            controller: controller,
+            validator: validator,
+            maxLines: maxLines,
+            minLines: minLines,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
+            decoration: InputDecoration(
+              labelText: label,
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Theme.of(context).hintColor.withValues(alpha: 0.6),
+                fontSize: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: AppColors.deepRed, width: 1.8),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: AppColors.danger, width: 1.2),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: AppColors.danger, width: 1.8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ─── save button ───
 
 class _SaveButton extends StatelessWidget {
@@ -1180,8 +1590,8 @@ class _SaveButton extends StatelessWidget {
             colors: isLoading
                 ? [Colors.grey.shade400, Colors.grey.shade500]
                 : isDark
-                ? [const Color(0xFF7B2FF7), const Color(0xFF4A00E0)]
-                : [AppColors.deepRed, AppColors.vermilion],
+                    ? [const Color(0xFF7B2FF7), const Color(0xFF4A00E0)]
+                    : [AppColors.deepRed, AppColors.vermilion],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: isLoading
