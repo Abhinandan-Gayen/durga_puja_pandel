@@ -323,7 +323,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Pandal' : 'New Pandal'),
         elevation: 0,
-        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -332,7 +332,23 @@ class _PandalFormScreenState extends State<PandalFormScreen>
         builder: (context, admin, _) {
           return Stack(
             children: [
-              _HeroBackground(isDark: isDark),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 260,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDark
+                          ? [const Color(0xFF1A1A2E), const Color(0xFF16213E), const Color(0xFF0F3460)]
+                          : [AppColors.deepRed, AppColors.vermilion, const Color(0xFFC62828)],
+                    ),
+                  ),
+                ),
+              ),
               Form(
                 key: _formKey,
                 child: ListView(
@@ -502,30 +518,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   }
 }
 
-// ─── hero ───
-
-class _HeroBackground extends StatelessWidget {
-  const _HeroBackground({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: 0, left: 0, right: 0, height: 260,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [const Color(0xFF1A1A2E), const Color(0xFF16213E), const Color(0xFF0F3460)]
-                : [AppColors.deepRed, AppColors.vermilion, const Color(0xFFC62828)],
-          ),
-        ),
-      ),
-    );
-  }
-}
+// ─── hero header ───
 
 class _HeroHeader extends StatelessWidget {
   const _HeroHeader({required this.isEditing, required this.count});
@@ -534,7 +527,7 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top + kToolbarHeight + 16;
+    final topPad = MediaQuery.of(context).viewPadding.top + kToolbarHeight + 16;
     return Padding(
       padding: EdgeInsets.only(top: topPad, left: 24, right: 24),
       child: Column(
