@@ -67,7 +67,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _latitudeController = TextEditingController(text: '${pandal.latitude}');
     _longitudeController = TextEditingController(text: '${pandal.longitude}');
     _themeNameController = TextEditingController(text: pandal.themeName);
-    _organizerNameController = TextEditingController(text: pandal.organizerName);
+    _organizerNameController = TextEditingController(
+      text: pandal.organizerName,
+    );
     _openingTimeController = TextEditingController(text: pandal.openingTime);
     _closingTimeController = TextEditingController(text: pandal.closingTime);
     _entryFeeController = TextEditingController(text: '${pandal.entryFee}');
@@ -103,9 +105,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
-    _pulse = Tween<double>(begin: 1.0, end: 1.04).animate(
-      CurvedAnimation(parent: _pulseAnim, curve: Curves.easeInOut),
-    );
+    _pulse = Tween<double>(
+      begin: 1.0,
+      end: 1.04,
+    ).animate(CurvedAnimation(parent: _pulseAnim, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _anim.forward();
@@ -259,17 +262,20 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     return FadeTransition(
       opacity: _anim,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: Offset(0, 0.15 + (index * 0.03)),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _anim,
-          curve: Interval(
-            (index * 0.09).clamp(0.0, 0.9),
-            1.0,
-            curve: Curves.easeOutCubic,
-          ),
-        )),
+        position:
+            Tween<Offset>(
+              begin: Offset(0, 0.15 + (index * 0.03)),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: _anim,
+                curve: Interval(
+                  (index * 0.09).clamp(0.0, 0.9),
+                  1.0,
+                  curve: Curves.easeOutCubic,
+                ),
+              ),
+            ),
         child: child,
       ),
     );
@@ -280,13 +286,19 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     final isEditing = widget.initialPandal != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // UI FIXED: অ্যাপবার এবং উপরের অংশের জন্য একই গ্রেডিয়েন্ট কালার ব্যবহার করা হলো
+    final gradientColors = isDark
+        ? const [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F3460)]
+        : [AppColors.deepRed, AppColors.vermilion, const Color(0xFFC62828)];
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      // UI FIXED: extendBodyBehindAppBar সরানো হয়েছে
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Pandal' : 'New Pandal'),
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        backgroundColor: Colors.transparent,
+        scrolledUnderElevation:
+            0, // UI FIXED: স্ক্রল করার সময় অ্যাপবারের রঙ পরিবর্তন হওয়া আটকাতে
+        backgroundColor: gradientColors.first,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -294,31 +306,29 @@ class _PandalFormScreenState extends State<PandalFormScreen>
         builder: (context, admin, _) {
           return Stack(
             children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 260,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDark
-                          ? [const Color(0xFF1A1A2E), const Color(0xFF16213E), const Color(0xFF0F3460)]
-                          : [AppColors.deepRed, AppColors.vermilion, const Color(0xFFC62828)],
-                    ),
-                  ),
-                ),
-              ),
               Form(
                 key: _formKey,
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    _HeroHeader(
-                      isEditing: isEditing,
-                      count: admin.totalPandals,
+                    // UI FIXED: ফিক্সড ব্যাকগ্রাউন্ডের বদলে হেডারের সাথেই গ্রেডিয়েন্ট স্ক্রল হবে
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: gradientColors,
+                        ),
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(32),
+                        ),
+                      ),
+                      padding: const EdgeInsets.only(top: 12, bottom: 32),
+                      child: _HeroHeader(
+                        isEditing: isEditing,
+                        count: admin.totalPandals,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -329,172 +339,319 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                             _sep(16),
                           ],
 
-                          _animateIn(0, _SectionCard(
-                            title: 'Basic Info',
-                            icon: Icons.info_outline_rounded,
-                            children: [
-                              _Field(_nameController, 'Pandal Name', Icons.temple_hindu_rounded,
-                                  validator: (v) => Validators.required(v, 'Pandal name')),
-                              _sep(16),
-                              _Field(_descriptionController, 'Description', Icons.description_outlined, maxLines: 4,
-                                  validator: (v) => Validators.required(v, 'Description')),
-                            ],
-                          )),
-
-                          _sep(16),
-
-                          _animateIn(1, _SectionCard(
-                            title: 'Location',
-                            icon: Icons.location_on_outlined,
-                            children: [
-                              _Field(_areaController, 'Area', Icons.place_outlined,
-                                  validator: (v) => Validators.required(v, 'Area')),
-                              _sep(16),
-                              _Dropdown<String>(
-                                value: _city, label: 'City', icon: Icons.location_city_rounded,
-                                items: AppConstants.supportedCities,
-                                display: (c) => c,
-                                onChanged: (v) => setState(() => _city = v ?? _city),
-                              ),
-                              _sep(16),
-                              _Field(_addressController, 'Full Address', Icons.home_rounded,
-                                  validator: (v) => Validators.required(v, 'Full address')),
-                              _sep(16),
-                              Row(children: [
-                                Expanded(child: _Field(_latitudeController, 'Latitude', Icons.swap_vert_rounded,
-                                    keyboardType: TextInputType.number, validator: Validators.latitude)),
-                                const SizedBox(width: 12),
-                                Expanded(child: _Field(_longitudeController, 'Longitude', Icons.swap_horiz_rounded,
-                                    keyboardType: TextInputType.number, validator: Validators.longitude)),
-                              ]),
-                            ],
-                          )),
-
-                          _sep(16),
-
-                          _animateIn(2, _SectionCard(
-                            title: 'Event Details',
-                            icon: Icons.auto_awesome_rounded,
-                            children: [
-                              _Field(_themeNameController, 'Theme Name', Icons.palette_outlined,
-                                  validator: (v) => Validators.required(v, 'Theme name')),
-                              _sep(16),
-                              _Field(_organizerNameController, 'Organizer', Icons.people_outline_rounded,
-                                  validator: (v) => Validators.required(v, 'Organizer name')),
-                              _sep(16),
-                              Row(children: [
-                                Expanded(child: _Field(_openingTimeController, 'Opens', Icons.sunny, hint: '6:00 AM',
-                                    validator: (v) => Validators.required(v, 'Opening time'))),
-                                const SizedBox(width: 12),
-                                Expanded(child: _Field(_closingTimeController, 'Closes', Icons.nights_stay_rounded,
-                                    hint: '11:00 PM', validator: (v) => Validators.required(v, 'Closing time'))),
-                              ]),
-                              _sep(16),
-                              _Field(_entryFeeController, 'Entry Fee', Icons.currency_rupee_rounded,
-                                  keyboardType: TextInputType.number, hint: '0 = free',
-                                  validator: (v) => Validators.nonNegativeNumber(v, 'Entry fee')),
-                            ],
-                          )),
-
-                          _sep(16),
-
-                          _animateIn(3, _SectionCard(
-                            title: 'Settings',
-                            icon: Icons.tune_rounded,
-                            children: [
-                              _CrowdSelector(
-                                selected: _crowdLevel,
-                                onChanged: (v) => setState(() => _crowdLevel = v),
-                              ),
-                              _sep(18),
-                              _Field(_nearbyTransportController, 'Nearby Transport', Icons.directions_bus_rounded,
-                                  maxLines: 3, hint: 'One per line',
-                                  validator: (v) => Validators.required(v, 'Nearby transport')),
-                              _sep(4), const Divider(), _sep(4),
-                              _SettingToggle(Icons.local_parking_rounded, 'Parking Available', _parkingAvailable,
-                                  (v) => setState(() => _parkingAvailable = v)),
-                              _SettingToggle(Icons.star_rounded, 'Featured Pandal', _isFeatured,
-                                  (v) => setState(() => _isFeatured = v), sub: 'Shown in featured section on home'),
-                              _SettingToggle(Icons.visibility_rounded, 'Active Listing', _isActive,
-                                  (v) => setState(() => _isActive = v), sub: 'Visible to all users'),
-                            ],
-                          )),
-
-                          _sep(16),
-
-                          _animateIn(4, _SectionCard(
-                            title: 'Media',
-                            icon: Icons.perm_media_outlined,
-                            children: [
-                              _Field(
-                                _thumbnailUrlController,
-                                'Thumbnail Image URL',
-                                Icons.image_rounded,
-                                hint: 'Enter public image URL',
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Thumbnail URL is required';
-                                  return _validateUrl(v);
-                                },
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4, top: 4),
-                                child: Text(
-                                  _thumbnailUrlController.text.trim().isNotEmpty ? '1 thumbnail' : 'No thumbnail',
-                                  style: Theme.of(context).textTheme.bodySmall,
+                          _animateIn(
+                            0,
+                            _SectionCard(
+                              title: 'Basic Info',
+                              icon: Icons.info_outline_rounded,
+                              children: [
+                                _Field(
+                                  _nameController,
+                                  'Pandal Name',
+                                  Icons.temple_hindu_rounded,
+                                  validator: (v) =>
+                                      Validators.required(v, 'Pandal name'),
                                 ),
-                              ),
-                              _sep(16),
-                              _Field(
-                                _galleryUrlsController,
-                                'Gallery Image URLs',
-                                Icons.collections_rounded,
-                                hint: 'Enter one image URL per line',
-                                minLines: 4,
-                                maxLines: 7,
-                                validator: _validateUrlList,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4, top: 4),
-                                child: Text(
-                                  '$_galleryUrlCount image URL${_galleryUrlCount == 1 ? '' : 's'}',
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                _sep(16),
+                                _Field(
+                                  _descriptionController,
+                                  'Description',
+                                  Icons.description_outlined,
+                                  maxLines: 4,
+                                  validator: (v) =>
+                                      Validators.required(v, 'Description'),
                                 ),
-                              ),
-                              _sep(16),
-                              _Field(
-                                _videoUrlsController,
-                                'Video URLs',
-                                Icons.videocam_rounded,
-                                hint: 'Enter one video URL per line (maximum 2)',
-                                minLines: 3,
-                                maxLines: 5,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return null;
-                                  final error = _validateUrlList(v);
-                                  if (error != null) return error;
-                                  if (_parseUrls(v).length > 2) return 'Maximum 2 video URLs are allowed';
-                                  return null;
-                                },
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4, top: 4),
-                                child: Text(
-                                  '$_videoUrlCount/2 video URLs',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ),
-                            ],
-                          )),
+                              ],
+                            ),
+                          ),
 
                           _sep(16),
 
-                          _animateIn(5, _SaveButton(
-                            isEditing: isEditing,
-                            isLoading: admin.isLoading,
-                            isDark: isDark,
-                            pulse: _pulse,
-                            onTap: _submit,
-                          )),
+                          _animateIn(
+                            1,
+                            _SectionCard(
+                              title: 'Location',
+                              icon: Icons.location_on_outlined,
+                              children: [
+                                _Field(
+                                  _areaController,
+                                  'Area',
+                                  Icons.place_outlined,
+                                  validator: (v) =>
+                                      Validators.required(v, 'Area'),
+                                ),
+                                _sep(16),
+                                _Dropdown<String>(
+                                  value: _city,
+                                  label: 'City',
+                                  icon: Icons.location_city_rounded,
+                                  items: AppConstants.supportedCities,
+                                  display: (c) => c,
+                                  onChanged: (v) =>
+                                      setState(() => _city = v ?? _city),
+                                ),
+                                _sep(16),
+                                _Field(
+                                  _addressController,
+                                  'Full Address',
+                                  Icons.home_rounded,
+                                  validator: (v) =>
+                                      Validators.required(v, 'Full address'),
+                                ),
+                                _sep(16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _Field(
+                                        _latitudeController,
+                                        'Latitude',
+                                        Icons.swap_vert_rounded,
+                                        keyboardType: TextInputType.number,
+                                        validator: Validators.latitude,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _Field(
+                                        _longitudeController,
+                                        'Longitude',
+                                        Icons.swap_horiz_rounded,
+                                        keyboardType: TextInputType.number,
+                                        validator: Validators.longitude,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          _sep(16),
+
+                          _animateIn(
+                            2,
+                            _SectionCard(
+                              title: 'Event Details',
+                              icon: Icons.auto_awesome_rounded,
+                              children: [
+                                _Field(
+                                  _themeNameController,
+                                  'Theme Name',
+                                  Icons.palette_outlined,
+                                  validator: (v) =>
+                                      Validators.required(v, 'Theme name'),
+                                ),
+                                _sep(16),
+                                _Field(
+                                  _organizerNameController,
+                                  'Organizer',
+                                  Icons.people_outline_rounded,
+                                  validator: (v) =>
+                                      Validators.required(v, 'Organizer name'),
+                                ),
+                                _sep(16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _Field(
+                                        _openingTimeController,
+                                        'Opens',
+                                        Icons.sunny,
+                                        hint: '6:00 AM',
+                                        validator: (v) => Validators.required(
+                                          v,
+                                          'Opening time',
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _Field(
+                                        _closingTimeController,
+                                        'Closes',
+                                        Icons.nights_stay_rounded,
+                                        hint: '11:00 PM',
+                                        validator: (v) => Validators.required(
+                                          v,
+                                          'Closing time',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                _sep(16),
+                                _Field(
+                                  _entryFeeController,
+                                  'Entry Fee',
+                                  Icons.currency_rupee_rounded,
+                                  keyboardType: TextInputType.number,
+                                  hint: '0 = free',
+                                  validator: (v) =>
+                                      Validators.nonNegativeNumber(
+                                        v,
+                                        'Entry fee',
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          _sep(16),
+
+                          _animateIn(
+                            3,
+                            _SectionCard(
+                              title: 'Settings',
+                              icon: Icons.tune_rounded,
+                              children: [
+                                _CrowdSelector(
+                                  selected: _crowdLevel,
+                                  onChanged: (v) =>
+                                      setState(() => _crowdLevel = v),
+                                ),
+                                _sep(18),
+                                _Field(
+                                  _nearbyTransportController,
+                                  'Nearby Transport',
+                                  Icons.directions_bus_rounded,
+                                  maxLines: 3,
+                                  hint: 'One per line',
+                                  validator: (v) => Validators.required(
+                                    v,
+                                    'Nearby transport',
+                                  ),
+                                ),
+                                _sep(4),
+                                const Divider(),
+                                _sep(4),
+                                _SettingToggle(
+                                  Icons.local_parking_rounded,
+                                  'Parking Available',
+                                  _parkingAvailable,
+                                  (v) => setState(() => _parkingAvailable = v),
+                                ),
+                                _SettingToggle(
+                                  Icons.star_rounded,
+                                  'Featured Pandal',
+                                  _isFeatured,
+                                  (v) => setState(() => _isFeatured = v),
+                                  sub: 'Shown in featured section on home',
+                                ),
+                                _SettingToggle(
+                                  Icons.visibility_rounded,
+                                  'Active Listing',
+                                  _isActive,
+                                  (v) => setState(() => _isActive = v),
+                                  sub: 'Visible to all users',
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          _sep(16),
+
+                          _animateIn(
+                            4,
+                            _SectionCard(
+                              title: 'Media',
+                              icon: Icons.perm_media_outlined,
+                              children: [
+                                _Field(
+                                  _thumbnailUrlController,
+                                  'Thumbnail Image URL',
+                                  Icons.image_rounded,
+                                  hint: 'Enter public image URL',
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty)
+                                      return 'Thumbnail URL is required';
+                                    return _validateUrl(v);
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 4,
+                                    top: 4,
+                                  ),
+                                  child: Text(
+                                    _thumbnailUrlController.text
+                                            .trim()
+                                            .isNotEmpty
+                                        ? '1 thumbnail'
+                                        : 'No thumbnail',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ),
+                                _sep(16),
+                                _Field(
+                                  _galleryUrlsController,
+                                  'Gallery Image URLs',
+                                  Icons.collections_rounded,
+                                  hint: 'Enter one image URL per line',
+                                  minLines: 4,
+                                  maxLines: 7,
+                                  validator: _validateUrlList,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 4,
+                                    top: 4,
+                                  ),
+                                  child: Text(
+                                    '$_galleryUrlCount image URL${_galleryUrlCount == 1 ? '' : 's'}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ),
+                                _sep(16),
+                                _Field(
+                                  _videoUrlsController,
+                                  'Video URLs',
+                                  Icons.videocam_rounded,
+                                  hint:
+                                      'Enter one video URL per line (maximum 2)',
+                                  minLines: 3,
+                                  maxLines: 5,
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty)
+                                      return null;
+                                    final error = _validateUrlList(v);
+                                    if (error != null) return error;
+                                    if (_parseUrls(v).length > 2)
+                                      return 'Maximum 2 video URLs are allowed';
+                                    return null;
+                                  },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 4,
+                                    top: 4,
+                                  ),
+                                  child: Text(
+                                    '$_videoUrlCount/2 video URLs',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          _sep(16),
+
+                          _animateIn(
+                            5,
+                            _SaveButton(
+                              isEditing: isEditing,
+                              isLoading: admin.isLoading,
+                              isDark: isDark,
+                              pulse: _pulse,
+                              onTap: _submit,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -505,7 +662,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                 Positioned.fill(
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.35),
-                    child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
                   ),
                 ),
             ],
@@ -525,29 +684,48 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).viewPadding.top + kToolbarHeight + 16;
+    // UI FIXED: ম্যানুয়াল topPad সরানো হয়েছে কারণ এখন Scaffold নিজে থেকে সেইভ এরিয়া হ্যান্ডেল করবে।
     return Padding(
-      padding: EdgeInsets.only(top: topPad, left: 24, right: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
           Container(
-            width: 72, height: 72,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.18),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
-            child: const Icon(Icons.temple_hindu_rounded, color: Colors.white, size: 36),
+            child: const Icon(
+              Icons.temple_hindu_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             isEditing ? 'Edit Pandal' : 'Create New Pandal',
-            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
-            isEditing ? 'Update the pandal details below' : 'Fill in the details to add a new pandal',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
+            isEditing
+                ? 'Update the pandal details below'
+                : 'Fill in the details to add a new pandal',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),
           Container(
@@ -559,11 +737,19 @@ class _HeroHeader extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.grid_view_rounded, color: Colors.white70, size: 16),
+                const Icon(
+                  Icons.grid_view_rounded,
+                  color: Colors.white70,
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '$count pandals in system',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -577,7 +763,11 @@ class _HeroHeader extends StatelessWidget {
 // ─── section card ───
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.icon, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
   final String title;
   final IconData icon;
   final List<Widget> children;
@@ -588,33 +778,57 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 6))],
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-            child: Row(children: [
-              Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.deepRed.withValues(alpha: 0.15), AppColors.vermilion.withValues(alpha: 0.08)],
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.deepRed.withValues(alpha: 0.15),
+                        AppColors.vermilion.withValues(alpha: 0.08),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  child: Icon(icon, size: 18, color: AppColors.deepRed),
                 ),
-                child: Icon(icon, size: 18, color: AppColors.deepRed),
-              ),
-              const SizedBox(width: 10),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.2)),
-            ]),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.all(18),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
           ),
         ],
       ),
@@ -625,8 +839,15 @@ class _SectionCard extends StatelessWidget {
 // ─── form field ───
 
 class _Field extends StatelessWidget {
-  const _Field(this.controller, this.label, this.icon, {
-    this.hint, this.validator, this.keyboardType, this.maxLines = 1, this.minLines,
+  const _Field(
+    this.controller,
+    this.label,
+    this.icon, {
+    this.hint,
+    this.validator,
+    this.keyboardType,
+    this.maxLines = 1,
+    this.minLines,
   });
 
   final TextEditingController controller;
@@ -646,27 +867,54 @@ class _Field extends StatelessWidget {
       keyboardType: keyboardType,
       maxLines: maxLines,
       minLines: minLines,
-      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
+      style: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: Theme.of(context).textTheme.bodyLarge?.color,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: TextStyle(color: Theme.of(context).hintColor.withValues(alpha: 0.6), fontSize: 14),
+        hintStyle: TextStyle(
+          color: Theme.of(context).hintColor.withValues(alpha: 0.6),
+          fontSize: 14,
+        ),
         prefixIcon: Container(
           margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppColors.deepRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: AppColors.deepRed.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Icon(icon, size: 20, color: AppColors.deepRed),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.4))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.4))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.deepRed, width: 1.8)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.danger, width: 1.2)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.danger, width: 1.8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.deepRed, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -676,8 +924,12 @@ class _Field extends StatelessWidget {
 
 class _Dropdown<T> extends StatelessWidget {
   const _Dropdown({
-    required this.value, required this.label, required this.icon,
-    required this.items, required this.display, required this.onChanged,
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.items,
+    required this.display,
+    required this.onChanged,
   });
 
   final T value;
@@ -696,17 +948,33 @@ class _Dropdown<T> extends StatelessWidget {
         labelText: label,
         prefixIcon: Container(
           margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppColors.deepRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: AppColors.deepRed.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Icon(icon, size: 20, color: AppColors.deepRed),
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.4))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.deepRed, width: 1.8)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.deepRed, width: 1.8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(display(item)))).toList(),
+      items: items
+          .map(
+            (item) => DropdownMenuItem(value: item, child: Text(display(item))),
+          )
+          .toList(),
       onChanged: onChanged,
     );
   }
@@ -715,7 +983,13 @@ class _Dropdown<T> extends StatelessWidget {
 // ─── toggle ───
 
 class _SettingToggle extends StatelessWidget {
-  const _SettingToggle(this.icon, this.label, this.value, this.onChanged, {this.sub});
+  const _SettingToggle(
+    this.icon,
+    this.label,
+    this.value,
+    this.onChanged, {
+    this.sub,
+  });
   final IconData icon;
   final String label;
   final bool value;
@@ -729,15 +1003,27 @@ class _SettingToggle extends StatelessWidget {
       child: SwitchListTile(
         contentPadding: EdgeInsets.zero,
         secondary: Container(
-          width: 36, height: 36,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: value ? AppColors.deepRed.withValues(alpha: 0.12) : Theme.of(context).dividerColor.withValues(alpha: 0.15),
+            color: value
+                ? AppColors.deepRed.withValues(alpha: 0.12)
+                : Theme.of(context).dividerColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 19, color: value ? AppColors.deepRed : Theme.of(context).disabledColor),
+          child: Icon(
+            icon,
+            size: 19,
+            color: value ? AppColors.deepRed : Theme.of(context).disabledColor,
+          ),
         ),
-        title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-        subtitle: sub != null ? Text(sub!, style: Theme.of(context).textTheme.bodySmall) : null,
+        title: Text(
+          label,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+        subtitle: sub != null
+            ? Text(sub!, style: Theme.of(context).textTheme.bodySmall)
+            : null,
         value: value,
         activeColor: AppColors.deepRed,
         onChanged: onChanged,
@@ -755,27 +1041,49 @@ class _CrowdSelector extends StatelessWidget {
 
   static const _levels = ['low', 'medium', 'high'];
   static const _labels = ['Low', 'Medium', 'High'];
-  static const _colors = [AppColors.success, AppColors.warning, AppColors.danger];
-  static const _icons = [Icons.sentiment_satisfied_alt, Icons.sentiment_neutral, Icons.sentiment_very_dissatisfied];
+  static const _colors = [
+    AppColors.success,
+    AppColors.warning,
+    AppColors.danger,
+  ];
+  static const _icons = [
+    Icons.sentiment_satisfied_alt,
+    Icons.sentiment_neutral,
+    Icons.sentiment_very_dissatisfied,
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Container(
-            width: 34, height: 34,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  colors: [AppColors.deepRed.withValues(alpha: 0.15), AppColors.vermilion.withValues(alpha: 0.08)]),
-              borderRadius: BorderRadius.circular(10),
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.deepRed.withValues(alpha: 0.15),
+                    AppColors.vermilion.withValues(alpha: 0.08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.group_rounded,
+                size: 18,
+                color: AppColors.deepRed,
+              ),
             ),
-            child: const Icon(Icons.group_rounded, size: 18, color: AppColors.deepRed),
-          ),
-          const SizedBox(width: 10),
-          const Text('Crowd Level', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        ]),
+            const SizedBox(width: 10),
+            const Text(
+              'Crowd Level',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         Row(
           children: List.generate(3, (i) {
@@ -793,20 +1101,45 @@ class _CrowdSelector extends StatelessWidget {
                       color: sel ? _colors[i] : Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: sel ? _colors[i] : Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                        color: sel
+                            ? _colors[i]
+                            : Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.4),
                         width: sel ? 2 : 1,
                       ),
                       boxShadow: sel
-                          ? [BoxShadow(color: _colors[i].withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))]
+                          ? [
+                              BoxShadow(
+                                color: _colors[i].withValues(alpha: 0.25),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
                           : null,
                     ),
-                    child: Column(children: [
-                      Icon(_icons[i], color: sel ? Colors.white : Theme.of(context).disabledColor, size: 22),
-                      const SizedBox(height: 4),
-                      Text(_labels[i], style: TextStyle(
-                          color: sel ? Colors.white : Theme.of(context).textTheme.bodySmall?.color,
-                          fontWeight: FontWeight.w700, fontSize: 13)),
-                    ]),
+                    child: Column(
+                      children: [
+                        Icon(
+                          _icons[i],
+                          color: sel
+                              ? Colors.white
+                              : Theme.of(context).disabledColor,
+                          size: 22,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _labels[i],
+                          style: TextStyle(
+                            color: sel
+                                ? Colors.white
+                                : Theme.of(context).textTheme.bodySmall?.color,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -822,8 +1155,11 @@ class _CrowdSelector extends StatelessWidget {
 
 class _SaveButton extends StatelessWidget {
   const _SaveButton({
-    required this.isEditing, required this.isLoading, required this.isDark,
-    required this.pulse, required this.onTap,
+    required this.isEditing,
+    required this.isLoading,
+    required this.isDark,
+    required this.pulse,
+    required this.onTap,
   });
 
   final bool isEditing;
@@ -837,19 +1173,26 @@ class _SaveButton extends StatelessWidget {
     return ScaleTransition(
       scale: isLoading ? const AlwaysStoppedAnimation(1.0) : pulse,
       child: Container(
-        width: double.infinity, height: 56,
+        width: double.infinity,
+        height: 56,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isLoading
                 ? [Colors.grey.shade400, Colors.grey.shade500]
                 : isDark
-                    ? [const Color(0xFF7B2FF7), const Color(0xFF4A00E0)]
-                    : [AppColors.deepRed, AppColors.vermilion],
+                ? [const Color(0xFF7B2FF7), const Color(0xFF4A00E0)]
+                : [AppColors.deepRed, AppColors.vermilion],
           ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: isLoading ? null : [
-            BoxShadow(color: AppColors.deepRed.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
-          ],
+          boxShadow: isLoading
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppColors.deepRed.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
         ),
         child: Material(
           color: Colors.transparent,
@@ -860,14 +1203,33 @@ class _SaveButton extends StatelessWidget {
             highlightColor: Colors.white.withValues(alpha: 0.08),
             child: Center(
               child: isLoading
-                  ? const SizedBox(width: 24, height: 24,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                  : Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.save_rounded, color: Colors.white, size: 22),
-                      const SizedBox(width: 10),
-                      Text(isEditing ? 'Update Pandal' : 'Create Pandal',
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                    ]),
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.save_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          isEditing ? 'Update Pandal' : 'Create Pandal',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),
@@ -886,13 +1248,30 @@ class _ErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.errorContainer, borderRadius: BorderRadius.circular(14)),
-      child: Row(children: [
-        Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.onErrorContainer, size: 20),
-        const SizedBox(width: 10),
-        Expanded(child: Text(message, style: TextStyle(
-            color: Theme.of(context).colorScheme.onErrorContainer, fontSize: 13, fontWeight: FontWeight.w500))),
-      ]),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
