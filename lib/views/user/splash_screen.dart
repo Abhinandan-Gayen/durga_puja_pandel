@@ -17,22 +17,33 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('SplashScreen: initState called');
     Future<void>.delayed(const Duration(milliseconds: 900), () async {
+      debugPrint('SplashScreen: 900ms timer triggered');
       if (!mounted) {
+        debugPrint('SplashScreen: Not mounted, returning');
         return;
       }
       final auth = context.read<AuthController>();
-      await auth.fetchCurrentUserData();
+      debugPrint('SplashScreen: auth.isLoggedIn = ${auth.isLoggedIn}');
+      debugPrint('SplashScreen: Calling fetchCurrentUserData()');
+      try {
+        await auth.fetchCurrentUserData();
+        debugPrint('SplashScreen: fetchCurrentUserData() completed');
+      } catch (e) {
+        debugPrint('SplashScreen: Error fetching current user data: $e');
+      }
       if (!mounted) {
+        debugPrint('SplashScreen: Not mounted after fetch, returning');
         return;
       }
-      context.goNamed(
-        auth.isLoggedIn
-            ? auth.isAdmin
-                  ? RouteNames.adminDashboard
-                  : RouteNames.home
-            : RouteNames.onboarding,
-      );
+      final targetRoute = auth.isLoggedIn
+          ? auth.isAdmin
+              ? RouteNames.adminDashboard
+              : RouteNames.home
+          : RouteNames.onboarding;
+      debugPrint('SplashScreen: Navigating to route: $targetRoute');
+      context.goNamed(targetRoute);
     });
   }
 

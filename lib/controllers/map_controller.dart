@@ -22,7 +22,7 @@ class MapController extends ChangeNotifier {
   Future<void> loadUserLocation() async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    Future.microtask(notifyListeners);
     try {
       currentPosition = await _locationService.getCurrentPosition();
     } catch (error) {

@@ -15,7 +15,7 @@ class LocationController extends ChangeNotifier {
   Future<void> loadLocation() async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    Future.microtask(notifyListeners);
     try {
       currentPosition = await _locationService.determinePosition();
     } catch (error) {

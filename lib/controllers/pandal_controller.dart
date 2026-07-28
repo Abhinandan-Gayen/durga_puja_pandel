@@ -28,7 +28,7 @@ class PandalController extends ChangeNotifier {
   void watchPandals() {
     _subscription?.cancel();
     isLoading = true;
-    notifyListeners();
+    Future.microtask(notifyListeners);
 
     _subscription = _firestoreService.watchPandals().listen(
       (items) {
@@ -310,7 +310,7 @@ class PandalController extends ChangeNotifier {
   Future<void> _run(Future<void> Function() action) async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    Future.microtask(notifyListeners);
     try {
       await action();
     } catch (error) {

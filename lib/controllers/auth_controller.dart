@@ -126,7 +126,7 @@ class AuthController extends ChangeNotifier {
   Future<void> _run(Future<void> Function() action) async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    Future.microtask(notifyListeners);
     try {
       await action();
     } on FirebaseAuthException catch (error) {

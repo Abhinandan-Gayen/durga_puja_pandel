@@ -142,7 +142,7 @@ class AdminPandalController extends ChangeNotifier {
   Future<T?> _run<T>(Future<T> Function() action) async {
     isLoading = true;
     errorMessage = null;
-    notifyListeners();
+    Future.microtask(notifyListeners);
     try {
       return await action();
     } catch (error) {

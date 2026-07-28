@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'controllers/admin_pandal_controller.dart';
@@ -17,17 +18,32 @@ import 'core/services/map_service.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 
-class PujoPandalGuideApp extends StatelessWidget {
+class PujoPandalGuideApp extends StatefulWidget {
   const PujoPandalGuideApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
-    final authService = FirebaseAuthService();
-    final cloudinaryService = CloudinaryService();
-    final locationService = LocationService();
-    final mapService = MapService();
+  State<PujoPandalGuideApp> createState() => _PujoPandalGuideAppState();
+}
 
+class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
+  final firestoreService = FirestoreService();
+  final authService = FirebaseAuthService();
+  final cloudinaryService = CloudinaryService();
+  final locationService = LocationService();
+  final mapService = MapService();
+
+  late final AuthController authController;
+  late final GoRouter router;
+
+  @override
+  void initState() {
+    super.initState();
+    authController = AuthController(authService, firestoreService);
+    router = AppRoutes.createRouter(authController);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         Provider<FirebaseAuthService>.value(value: authService),
@@ -35,8 +51,8 @@ class PujoPandalGuideApp extends StatelessWidget {
         Provider<CloudinaryService>.value(value: cloudinaryService),
         Provider<LocationService>.value(value: locationService),
         Provider<MapService>.value(value: mapService),
-        ChangeNotifierProvider(
-          create: (_) => AuthController(authService, firestoreService),
+        ChangeNotifierProvider<AuthController>.value(
+          value: authController,
         ),
         ChangeNotifierProvider(
           create: (_) => PandalController(firestoreService)..watchPandals(),
@@ -53,10 +69,10 @@ class PujoPandalGuideApp extends StatelessWidget {
         ),
         ChangeNotifierProxyProvider<AuthController, FavoriteController>(
           create: (_) => FavoriteController(firestoreService),
-          update: (_, authController, favoriteController) {
+          update: (_, auth, favoriteController) {
             final controller =
                 favoriteController ?? FavoriteController(firestoreService);
-            controller.bindUser(authController.firebaseUser?.uid);
+            controller.bindUser(auth.firebaseUser?.uid);
             return controller;
           },
         ),
@@ -65,17 +81,11 @@ class PujoPandalGuideApp extends StatelessWidget {
           create: (_) => MapController(mapService, locationService),
         ),
       ],
-      child: Consumer<AuthController>(
-        builder: (context, authController, _) {
-          final router = AppRoutes.createRouter(authController);
-
-          return MaterialApp.router(
-            title: 'Pujo Pandal Guide',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            routerConfig: router,
-          );
-        },
+      child: MaterialApp.router(
+        title: 'Pujo Pandal Guide',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        routerConfig: router,
       ),
     );
   }

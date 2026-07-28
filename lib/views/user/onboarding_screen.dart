@@ -43,8 +43,9 @@ class OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               OutlinedButton(
+               
                 onPressed: () => context.pushNamed(RouteNames.login),
-                child: const Text('Login as visitor or admin'),
+                child: const Text('Only admin Login'),
               ),
             ],
           ),
