@@ -20,6 +20,7 @@ class _MapScreenState extends State<MapScreen> {
   String _selectedArea = 'All';
   String _selectedFilter = 'All';
   bool _hasLoadedLocation = false;
+  bool _hasScheduledRefresh = false;
   String _lastMarkerSignature = '';
 
   @override
@@ -29,7 +30,10 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
     _hasLoadedLocation = true;
-    context.read<MapController>().loadUserLocation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<MapController>().loadUserLocation();
+    });
   }
 
   @override
@@ -45,22 +49,28 @@ class _MapScreenState extends State<MapScreen> {
     final filteredPandals = _filteredPandals(pandalController, mapController);
     final visiblePandals = _areaFilteredPandals(filteredPandals, mapController);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final signature =
-          '${_selectedArea}_${filteredPandals.map((pandal) => pandal.id).join('|')}';
-      if (_lastMarkerSignature == signature) {
-        return;
-      }
-      _lastMarkerSignature = signature;
-      context.read<MapController>().loadPandalMarkers(
-        pandals: filteredPandals,
-        area: _selectedArea,
-        onMarkerTap: _showPandalSheet,
-      );
-    });
+    if (!_hasScheduledRefresh) {
+      _hasScheduledRefresh = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          _hasScheduledRefresh = false;
+          return;
+        }
+        final signature =
+            '${_selectedArea}_${filteredPandals.map((pandal) => pandal.id).join('|')}';
+        if (_lastMarkerSignature == signature) {
+          _hasScheduledRefresh = false;
+          return;
+        }
+        _lastMarkerSignature = signature;
+        context.read<MapController>().loadPandalMarkers(
+          pandals: filteredPandals,
+          area: _selectedArea,
+          onMarkerTap: _showPandalSheet,
+        );
+        _hasScheduledRefresh = false;
+      });
+    }
 
     final currentPosition = mapController.currentPosition;
 
