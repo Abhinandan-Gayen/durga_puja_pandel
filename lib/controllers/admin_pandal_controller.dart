@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 
 import '../core/constants/firebase_constants.dart';
@@ -73,34 +71,6 @@ class AdminPandalController extends ChangeNotifier {
 
   Future<void> toggleFeaturedStatus(PandalModel pandal) async {
     await updatePandal(pandal.copyWith(isFeatured: !pandal.isFeatured));
-  }
-
-  Future<String?> uploadThumbnail(File file) async {
-    return _guardRun<String?>(() async {
-      final media = await _cloudinaryService.uploadImage(file);
-      lastUploadedMedia = media;
-      return media?.url;
-    });
-  }
-
-  Future<List<String>> uploadImages(List<File> files) async {
-    return _guardRun<List<String>>(() async {
-      final mediaList = await _cloudinaryService.uploadMultipleImages(files);
-      if (mediaList.isNotEmpty) {
-        lastUploadedMedia = mediaList.last;
-      }
-      return mediaList.map((media) => media.url).toList();
-    }).then((urls) => urls ?? <String>[]);
-  }
-
-  Future<List<String>> uploadVideos(List<File> files) async {
-    return _guardRun<List<String>>(() async {
-      final mediaList = await _cloudinaryService.uploadMultipleVideos(files);
-      if (mediaList.isNotEmpty) {
-        lastUploadedMedia = mediaList.last;
-      }
-      return mediaList.map((media) => media.url).toList();
-    }).then((urls) => urls ?? <String>[]);
   }
 
   Future<MediaModel?> uploadMedia({

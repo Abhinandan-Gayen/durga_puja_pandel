@@ -1,9 +1,5 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/admin_pandal_controller.dart';
@@ -35,7 +31,6 @@ class PandalFormScreen extends StatefulWidget {
 class _PandalFormScreenState extends State<PandalFormScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _imagePicker = ImagePicker();
   late final TextEditingController _nameController;
   late final TextEditingController _areaController;
   late final TextEditingController _addressController;
@@ -48,14 +43,14 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   late final TextEditingController _closingTimeController;
   late final TextEditingController _entryFeeController;
   late final TextEditingController _nearbyTransportController;
+  late final TextEditingController _thumbnailUrlController;
+  late final TextEditingController _galleryUrlsController;
+  late final TextEditingController _videoUrlsController;
   late String _city;
   late String _crowdLevel;
   late bool _isFeatured;
   late bool _isActive;
   late bool _parkingAvailable;
-  late String _thumbnailUrl;
-  late List<String> _imageUrls;
-  late List<String> _videoUrls;
 
   late final AnimationController _anim;
   late final AnimationController _pulseAnim;
@@ -79,6 +74,17 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _nearbyTransportController = TextEditingController(
       text: pandal.nearbyTransport.join('\n'),
     );
+    _thumbnailUrlController = TextEditingController(text: pandal.thumbnailUrl);
+    _galleryUrlsController = TextEditingController(
+      text: pandal.images.join('\n'),
+    );
+    _videoUrlsController = TextEditingController(
+      text: pandal.videos.join('\n'),
+    );
+    _thumbnailUrlController.addListener(_onMediaChanged);
+    _galleryUrlsController.addListener(_onMediaChanged);
+    _videoUrlsController.addListener(_onMediaChanged);
+
     _city = AppConstants.supportedCities.contains(pandal.city)
         ? pandal.city
         : AppConstants.supportedCities.first;
@@ -88,9 +94,6 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _isFeatured = pandal.isFeatured;
     _isActive = pandal.isActive;
     _parkingAvailable = pandal.parkingAvailable;
-    _thumbnailUrl = pandal.thumbnailUrl;
-    _imageUrls = [...pandal.images];
-    _videoUrls = [...pandal.videos];
 
     _anim = AnimationController(
       vsync: this,
@@ -109,6 +112,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     });
   }
 
+  void _onMediaChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -123,17 +130,75 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _closingTimeController.dispose();
     _entryFeeController.dispose();
     _nearbyTransportController.dispose();
+    _thumbnailUrlController.removeListener(_onMediaChanged);
+    _thumbnailUrlController.dispose();
+    _galleryUrlsController.removeListener(_onMediaChanged);
+    _galleryUrlsController.dispose();
+    _videoUrlsController.removeListener(_onMediaChanged);
+    _videoUrlsController.dispose();
     _anim.dispose();
     _pulseAnim.dispose();
     super.dispose();
   }
 
+  // ─── URL helpers ───
+
+  static List<String> _parseUrls(String value) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final url in value.split(RegExp(r'\r?\n'))) {
+      final trimmed = url.trim();
+      if (trimmed.isNotEmpty && seen.add(trimmed)) {
+        result.add(trimmed);
+      }
+    }
+    return result;
+  }
+
+  static String? _validateUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      return 'Enter a valid URL';
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      return 'URL must start with http or https';
+    }
+    return null;
+  }
+
+  static String? _validateUrlList(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final urls = _parseUrls(value);
+    for (final url in urls) {
+      final error = _validateUrl(url);
+      if (error != null) return error;
+    }
+    return null;
+  }
+
+  int get _galleryUrlCount => _parseUrls(_galleryUrlsController.text).length;
+  int get _videoUrlCount => _parseUrls(_videoUrlsController.text).length;
+
+  // ─── submit ───
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_thumbnailUrl.isEmpty) {
-      SnackbarHelper.showError(context, 'Thumbnail image is required');
+
+    final thumbnailUrl = _thumbnailUrlController.text.trim();
+    if (thumbnailUrl.isEmpty) {
+      SnackbarHelper.showError(context, 'Thumbnail image URL is required');
       return;
     }
+
+    final images = _parseUrls(_galleryUrlsController.text);
+    final videos = _parseUrls(_videoUrlsController.text);
+
+    if (videos.length > 2) {
+      SnackbarHelper.showError(context, 'Maximum 2 video URLs are allowed');
+      return;
+    }
+
     final initial = widget.initialPandal ?? PandalModel.empty();
     final uid = context.read<AuthController>().firebaseUser?.uid ?? '';
     final pandal = initial.copyWith(
@@ -152,9 +217,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       crowdLevel: _crowdLevel,
       isFeatured: _isFeatured,
       isActive: _isActive,
-      thumbnailUrl: _thumbnailUrl,
-      images: _imageUrls,
-      videos: _videoUrls,
+      thumbnailUrl: thumbnailUrl,
+      images: images,
+      videos: videos,
       nearbyTransport: _linesFromController(_nearbyTransportController),
       parkingAvailable: _parkingAvailable,
       createdBy: initial.createdBy.isEmpty ? uid : initial.createdBy,
@@ -178,109 +243,6 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     }
     SnackbarHelper.showSuccess(context, 'Pandal saved');
     context.pop();
-  }
-
-  Future<void> _uploadThumbnail() async {
-    try {
-      final file = await _pickSingleImage();
-      if (file == null || !mounted) return;
-      final url =
-          await context.read<AdminPandalController>().uploadThumbnail(file);
-      if (!mounted) return;
-      if (url == null) {
-        SnackbarHelper.showError(
-          context,
-          context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
-        );
-        return;
-      }
-      setState(() => _thumbnailUrl = url);
-    } catch (_) {
-      if (!mounted) return;
-      SnackbarHelper.showError(
-        context,
-        context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
-      );
-    }
-  }
-
-  Future<void> _uploadImages() async {
-    try {
-      final files = await _pickMultipleImages();
-      if (files.isEmpty || !mounted) return;
-      final urls =
-          await context.read<AdminPandalController>().uploadImages(files);
-      if (!mounted) return;
-      if (urls.isEmpty) {
-        SnackbarHelper.showError(
-          context,
-          context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
-        );
-        return;
-      }
-      setState(() {
-        for (final url in urls) {
-          if (!_imageUrls.contains(url)) _imageUrls.add(url);
-        }
-      });
-    } catch (_) {
-      if (!mounted) return;
-      SnackbarHelper.showError(
-        context,
-        context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
-      );
-    }
-  }
-
-  Future<void> _uploadVideos() async {
-    try {
-      final files = await _pickMultipleVideos();
-      if (files.isEmpty || !mounted) return;
-      final urls =
-          await context.read<AdminPandalController>().uploadVideos(files);
-      if (!mounted) return;
-      if (urls.isEmpty) {
-        SnackbarHelper.showError(
-          context,
-          context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
-        );
-        return;
-      }
-      setState(() {
-        for (final url in urls) {
-          if (!_videoUrls.contains(url)) _videoUrls.add(url);
-        }
-      });
-    } catch (_) {
-      if (!mounted) return;
-      SnackbarHelper.showError(
-        context,
-        context.read<AdminPandalController>().errorMessage ?? 'Upload failed',
-      );
-    }
-  }
-
-  Future<File?> _pickSingleImage() async {
-    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
-    if (image == null) return null;
-    return File(image.path);
-  }
-
-  Future<List<File>> _pickMultipleImages() async {
-    final images = await _imagePicker.pickMultiImage();
-    return images.map((image) => File(image.path)).toList();
-  }
-
-  Future<List<File>> _pickMultipleVideos() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.video,
-      allowMultiple: true,
-    );
-    if (result == null) return [];
-    return result.files
-        .where((file) => file.path != null)
-        .map((file) => File(file.path!))
-        .toList();
   }
 
   List<String> _linesFromController(TextEditingController controller) {
@@ -464,26 +426,62 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                             title: 'Media',
                             icon: Icons.perm_media_outlined,
                             children: [
-                              _MediaTile(
-                                title: 'Thumbnail Image', icon: Icons.image_rounded,
-                                urls: _thumbnailUrl.isEmpty ? const [] : [_thumbnailUrl],
-                                onUpload: admin.isLoading ? null : _uploadThumbnail,
-                                onRemove: (_) => setState(() => _thumbnailUrl = ''),
-                                enabled: !admin.isLoading, required: true,
+                              _Field(
+                                _thumbnailUrlController,
+                                'Thumbnail Image URL',
+                                Icons.image_rounded,
+                                hint: 'Enter public image URL',
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Thumbnail URL is required';
+                                  return _validateUrl(v);
+                                },
                               ),
-                              _sep(4), const Divider(), _sep(4),
-                              _MediaTile(
-                                title: 'Gallery Images', icon: Icons.collections_rounded, urls: _imageUrls,
-                                onUpload: admin.isLoading ? null : _uploadImages,
-                                onRemove: (url) => setState(() => _imageUrls.remove(url)),
-                                enabled: !admin.isLoading,
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, top: 4),
+                                child: Text(
+                                  _thumbnailUrlController.text.trim().isNotEmpty ? '1 thumbnail' : 'No thumbnail',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
                               ),
-                              _sep(4), const Divider(), _sep(4),
-                              _MediaTile(
-                                title: 'Videos', icon: Icons.videocam_rounded, urls: _videoUrls,
-                                onUpload: admin.isLoading ? null : _uploadVideos,
-                                onRemove: (url) => setState(() => _videoUrls.remove(url)),
-                                enabled: !admin.isLoading,
+                              _sep(16),
+                              _Field(
+                                _galleryUrlsController,
+                                'Gallery Image URLs',
+                                Icons.collections_rounded,
+                                hint: 'Enter one image URL per line',
+                                minLines: 4,
+                                maxLines: 7,
+                                validator: _validateUrlList,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, top: 4),
+                                child: Text(
+                                  '$_galleryUrlCount image URL${_galleryUrlCount == 1 ? '' : 's'}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                              _sep(16),
+                              _Field(
+                                _videoUrlsController,
+                                'Video URLs',
+                                Icons.videocam_rounded,
+                                hint: 'Enter one video URL per line (maximum 2)',
+                                minLines: 3,
+                                maxLines: 5,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return null;
+                                  final error = _validateUrlList(v);
+                                  if (error != null) return error;
+                                  if (_parseUrls(v).length > 2) return 'Maximum 2 video URLs are allowed';
+                                  return null;
+                                },
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, top: 4),
+                                child: Text(
+                                  '$_videoUrlCount/2 video URLs',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
                               ),
                             ],
                           )),
@@ -628,7 +626,7 @@ class _SectionCard extends StatelessWidget {
 
 class _Field extends StatelessWidget {
   const _Field(this.controller, this.label, this.icon, {
-    this.hint, this.validator, this.keyboardType, this.maxLines = 1,
+    this.hint, this.validator, this.keyboardType, this.maxLines = 1, this.minLines,
   });
 
   final TextEditingController controller;
@@ -638,6 +636,7 @@ class _Field extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final int maxLines;
+  final int? minLines;
 
   @override
   Widget build(BuildContext context) {
@@ -646,6 +645,7 @@ class _Field extends StatelessWidget {
       validator: validator,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      minLines: minLines,
       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color),
       decoration: InputDecoration(
         labelText: label,
@@ -813,107 +813,6 @@ class _CrowdSelector extends StatelessWidget {
             );
           }),
         ),
-      ],
-    );
-  }
-}
-
-// ─── media tile ───
-
-class _MediaTile extends StatelessWidget {
-  const _MediaTile({
-    required this.title, required this.icon, required this.urls,
-    required this.onUpload, required this.onRemove, required this.enabled,
-    this.required = false,
-  });
-
-  final String title;
-  final IconData icon;
-  final List<String> urls;
-  final VoidCallback? onUpload;
-  final ValueChanged<String> onRemove;
-  final bool enabled;
-  final bool required;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Container(
-            width: 34, height: 34,
-            decoration: BoxDecoration(color: AppColors.deepRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, size: 18, color: AppColors.deepRed),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                if (required) ...[
-                  const SizedBox(width: 4),
-                  const Text('*', style: TextStyle(color: AppColors.danger, fontSize: 15, fontWeight: FontWeight.w800)),
-                ],
-              ]),
-              Text('${urls.length} file${urls.length == 1 ? '' : 's'}', style: Theme.of(context).textTheme.bodySmall),
-            ]),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: enabled ? onUpload : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                decoration: BoxDecoration(
-                  gradient: enabled ? const LinearGradient(colors: [AppColors.deepRed, AppColors.vermilion]) : null,
-                  color: enabled ? null : Theme.of(context).disabledColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.add_rounded, size: 16, color: enabled ? Colors.white : Theme.of(context).disabledColor),
-                  const SizedBox(width: 4),
-                  Text('Add', style: TextStyle(
-                      color: enabled ? Colors.white : Theme.of(context).disabledColor,
-                      fontSize: 13, fontWeight: FontWeight.w700)),
-                ]),
-              ),
-            ),
-          ),
-        ]),
-        if (urls.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Wrap(spacing: 10, runSpacing: 10, children: [
-            for (final url in urls)
-              Container(
-                padding: const EdgeInsets.only(left: 10, top: 8, bottom: 8, right: 6),
-                decoration: BoxDecoration(
-                  color: (Theme.of(context).colorScheme.surfaceContainerHighest ?? Theme.of(context).dividerColor).withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.25)),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(icon, size: 14, color: AppColors.deepRed.withValues(alpha: 0.7)),
-                  const SizedBox(width: 6),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 160),
-                    child: Text(url, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color)),
-                  ),
-                  const SizedBox(width: 6),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(4),
-                    onTap: () => onRemove(url),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.close_rounded, size: 16, color: Theme.of(context).colorScheme.error),
-                    ),
-                  ),
-                ]),
-              ),
-          ]),
-        ],
       ],
     );
   }
