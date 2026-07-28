@@ -14,6 +14,7 @@ class RouteNames {
   static const favorites = 'favorites';
   static const search = 'search';
   static const profile = 'profile';
+  static const premium = 'premium';
   static const adminDashboard = 'adminDashboard';
   static const addPandal = 'addPandal';
   static const editPandal = 'editPandal';

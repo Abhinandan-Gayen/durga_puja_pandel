@@ -22,14 +22,15 @@ class _EditPandalScreenState extends State<EditPandalScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_hasRequestedData) {
-      return;
-    }
+    if (_hasRequestedData) return;
     _hasRequestedData = true;
-    final admin = context.read<AdminPandalController>();
-    if (admin.adminPandals.isEmpty) {
-      admin.fetchAllPandalsForAdmin();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final admin = context.read<AdminPandalController>();
+      if (admin.adminPandals.isEmpty) {
+        admin.fetchAllPandalsForAdmin();
+      }
+    });
   }
 
   @override

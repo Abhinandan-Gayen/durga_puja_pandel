@@ -10,6 +10,7 @@ import 'controllers/map_controller.dart';
 import 'controllers/pandal_controller.dart';
 import 'controllers/review_controller.dart';
 import 'controllers/search_filter_controller.dart';
+import 'controllers/theme_controller.dart';
 import 'core/services/cloudinary_service.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'core/services/firestore_service.dart';
@@ -25,7 +26,26 @@ class PujoPandalGuideApp extends StatefulWidget {
   State<PujoPandalGuideApp> createState() => _PujoPandalGuideAppState();
 }
 
+// class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
+//   late final ThemeController _themeController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _themeController = ThemeController();
+//     _themeController.load();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final firestoreService = FirestoreService();
+//     final authService = FirebaseAuthService();
+//     final cloudinaryService = CloudinaryService();
+//     final locationService = LocationService();
+//     final mapService = MapService();
+
 class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
+  late final ThemeController _themeController;
   final firestoreService = FirestoreService();
   final authService = FirebaseAuthService();
   final cloudinaryService = CloudinaryService();
@@ -40,6 +60,8 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
     super.initState();
     authController = AuthController(authService, firestoreService);
     router = AppRoutes.createRouter(authController);
+    _themeController = ThemeController();
+    _themeController.load();
   }
 
   @override
@@ -51,8 +73,9 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
         Provider<CloudinaryService>.value(value: cloudinaryService),
         Provider<LocationService>.value(value: locationService),
         Provider<MapService>.value(value: mapService),
-        ChangeNotifierProvider<AuthController>.value(
-          value: authController,
+        ChangeNotifierProvider<ThemeController>.value(value: _themeController),
+        ChangeNotifierProvider(
+          create: (_) => AuthController(authService, firestoreService),
         ),
         ChangeNotifierProvider(
           create: (_) => PandalController(firestoreService)..watchPandals(),
@@ -81,11 +104,19 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
           create: (_) => MapController(mapService, locationService),
         ),
       ],
-      child: MaterialApp.router(
-        title: 'Pujo Pandal Guide',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        routerConfig: router,
+      child: Consumer2<AuthController, ThemeController>(
+        builder: (context, authController, themeController, _) {
+          final router = AppRoutes.createRouter(authController);
+
+          return MaterialApp.router(
+            title: 'Pujo Pandal Guide',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeController.themeMode,
+            routerConfig: router,
+          );
+        },
       ),
     );
   }
