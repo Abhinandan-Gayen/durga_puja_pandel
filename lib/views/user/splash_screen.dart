@@ -57,8 +57,8 @@ class _SplashScreenState extends State<SplashScreen> {
     final target = forceOnboarding
         ? RouteNames.onboarding
         : auth.isLoggedIn
-            ? (auth.isAdmin ? RouteNames.adminDashboard : RouteNames.home)
-            : RouteNames.onboarding;
+        ? (auth.isAdmin ? RouteNames.adminDashboard : RouteNames.home)
+        : RouteNames.onboarding;
 
     context.goNamed(target);
   }
