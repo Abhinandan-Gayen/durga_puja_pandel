@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_constants.dart';
 import '../../routes/route_names.dart';
 import '../widgets/custom_button.dart';
@@ -39,7 +41,12 @@ class OnboardingScreen extends StatelessWidget {
               CustomButton(
                 label: 'Explore pandals',
                 icon: Icons.explore,
-                onPressed: () => context.goNamed(RouteNames.home),
+                onPressed: () async {
+                  await context.read<AuthController>().completeOnboarding();
+                  if (context.mounted) {
+                    context.goNamed(RouteNames.home);
+                  }
+                },
               ),
               const SizedBox(height: 8),
               OutlinedButton(

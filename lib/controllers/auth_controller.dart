@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/services/firebase_auth_service.dart';
 import '../core/services/firestore_service.dart';
@@ -17,6 +18,8 @@ class AuthController extends ChangeNotifier {
 
   StreamSubscription<User?>? _authSubscription;
   StreamSubscription<UserModel?>? _userSubscription;
+
+  bool hasSeenOnboarding = false;
 
   User? firebaseUser;
   UserModel? currentUserModel;
@@ -37,6 +40,7 @@ class AuthController extends ChangeNotifier {
 
   void _init() {
     firebaseUser = _authService.currentUser;
+    _loadOnboardingStatus();
     _authSubscription = _authService.authStateChanges.listen(_onAuthChanged);
   }
 
@@ -178,6 +182,13 @@ class AuthController extends ChangeNotifier {
     _pendingFetch = null;
     _userSubscription?.cancel();
     _userSubscription = null;
+    hasSeenOnboarding = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('has_seen_onboarding');
+    } catch (e) {
+      debugPrint('Error resetting onboarding status: $e');
+    }
     if (!_disposed) notifyListeners();
   }
 
@@ -229,6 +240,27 @@ class AuthController extends ChangeNotifier {
         if (!_disposed) notifyListeners();
       },
     );
+  }
+
+  Future<void> _loadOnboardingStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+      if (!_disposed) notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading onboarding status: $e');
+    }
+  }
+
+  Future<void> completeOnboarding() async {
+    hasSeenOnboarding = true;
+    if (!_disposed) notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_seen_onboarding', true);
+    } catch (e) {
+      debugPrint('Error saving onboarding status: $e');
+    }
   }
 
   @override
