@@ -1,0 +1,213 @@
+import 'package:durga_puja_pandel/core/theme/normal_color.dart';
+import 'package:flutter/material.dart';
+
+class Pandal {
+  const Pandal(
+    this.bn,
+    this.en,
+    this.area,
+    this.distance,
+    this.rating,
+    this.crowd,
+    this.theme,
+    this.image,
+  );
+  final String bn, en, area, distance, rating, crowd, theme, image;
+}
+
+class PandalTile extends StatelessWidget {
+  const PandalTile({
+    super.key,
+    required this.pandal,
+    this.compact = false,
+    this.saved = false,
+    this.onSaved,
+  });
+  final Pandal pandal;
+  final bool compact, saved;
+  final VoidCallback? onSaved;
+  @override
+  Widget build(BuildContext context) {
+    final crowdColor = pandal.crowd == 'Low'
+        ? Colors.green
+        : pandal.crowd == 'High'
+        ? Colors.redAccent
+        : gold;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: compact
+          ? Padding(
+              padding: const EdgeInsets.all(11),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(13),
+                    child: Image.network(
+                      pandal.image,
+                      width: 88,
+                      height: 88,
+                      fit: BoxFit.cover,
+                      errorBuilder: errorImage,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _PandalInfo(pandal: pandal, crowdColor: crowdColor),
+                  ),
+                  IconButton(
+                    onPressed: onSaved,
+                    icon: Icon(
+                      saved ? Icons.favorite : Icons.favorite_border,
+                      color: gold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Image.network(
+                      pandal.image,
+                      width: double.infinity,
+                      height: 160,
+                      fit: BoxFit.cover,
+                      errorBuilder: errorImage,
+                    ),
+                    const Positioned(top: 12, left: 12, child: OpenPill()),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton.filled(
+                        onPressed: onSaved,
+                        icon: Icon(
+                          saved ? Icons.favorite : Icons.favorite_border,
+                        ),
+                        style: IconButton.styleFrom(backgroundColor: red),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      left: 12,
+                      child: Text(
+                        '⭐ ${pandal.rating}',
+                        style: const TextStyle(
+                          color: gold,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 10,
+                      right: 12,
+                      child: Text(pandal.distance),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _PandalInfo(pandal: pandal, crowdColor: crowdColor),
+                      const SizedBox(height: 12),
+                      LinearProgressIndicator(
+                        value: pandal.crowd == 'High'
+                            ? .85
+                            : pandal.crowd == 'Low'
+                            ? .25
+                            : .58,
+                        color: crowdColor,
+                        backgroundColor: border,
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.navigation_outlined),
+                          label: const Text('Navigate'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+Widget errorImage(BuildContext context, Object error, StackTrace? stack) =>
+    Container(
+      color: surface2,
+      alignment: Alignment.center,
+      child: const Text('🛕', style: TextStyle(fontSize: 38)),
+    );
+
+class _PandalInfo extends StatelessWidget {
+  const _PandalInfo({required this.pandal, required this.crowdColor});
+  final Pandal pandal;
+  final Color crowdColor;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        pandal.bn,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        '${pandal.area} · ${pandal.distance}',
+        style: const TextStyle(color: muted, fontSize: 12),
+      ),
+      const SizedBox(height: 7),
+      Wrap(
+        spacing: 8,
+        children: [
+          Text(
+            '⭐ ${pandal.rating}',
+            style: const TextStyle(color: gold, fontSize: 12),
+          ),
+          Text(
+            pandal.crowd,
+            style: TextStyle(
+              color: crowdColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Text(
+            '● Open',
+            style: TextStyle(color: Colors.green, fontSize: 12),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+
+class OpenPill extends StatelessWidget {
+  const OpenPill();
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+            color: const Color(0xCC073E21),
+            borderRadius: BorderRadius.circular(20)),
+        child: const Text('● Open',
+            style: TextStyle(color: Colors.greenAccent, fontSize: 11)),
+      );
+}
+

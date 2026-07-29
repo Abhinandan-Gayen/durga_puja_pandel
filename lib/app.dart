@@ -1,3 +1,4 @@
+import 'package:durga_puja_pandel/core/theme/normal_color.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -111,10 +112,21 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
           return MaterialApp.router(
             title: 'Pujo Pandal Guide',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
+            // theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeController.themeMode,
             routerConfig: router,
+
+            theme: ThemeData(
+              brightness: Brightness.dark,
+              scaffoldBackgroundColor: bg,
+              colorScheme: const ColorScheme.dark(
+                primary: gold,
+                secondary: red,
+              ),
+              fontFamily: 'Arial',
+              useMaterial3: true,
+            ),
           );
         },
       ),

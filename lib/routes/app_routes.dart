@@ -1,3 +1,4 @@
+import 'package:durga_puja_pandel/views/Users/bottom_naigation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../controllers/auth_controller.dart';
@@ -9,17 +10,8 @@ import '../views/admin/upload_media_screen.dart';
 import '../views/auth/forgot_password_screen.dart';
 import '../views/auth/login_screen.dart';
 import '../views/auth/signup_screen.dart';
-import '../views/user/favorite_screen.dart';
-import '../views/user/home_screen.dart';
-import '../views/user/map_screen.dart';
-import '../views/user/onboarding_screen.dart';
-import '../views/user/pandal_detail_screen.dart';
-import '../views/user/pandal_list_screen.dart';
-import '../views/user/premium_screen.dart';
-import '../views/user/profile_screen.dart';
-import '../views/user/route_planner_screen.dart';
-import '../views/user/search_screen.dart';
-import '../views/user/splash_screen.dart';
+import '../views/Users/onboarding_screen.dart';
+import '../views/Users/splash_screen.dart';
 import 'route_names.dart';
 
 class AppRoutes {
@@ -86,49 +78,9 @@ class AppRoutes {
         GoRoute(
           path: '/home',
           name: RouteNames.home,
-          builder: (context, state) => const HomeScreen(),
+          builder: (context, state) => const AppShell(),
         ),
-        GoRoute(
-          path: '/pandals',
-          name: RouteNames.pandalList,
-          builder: (context, state) => const PandalListScreen(),
-        ),
-        GoRoute(
-          path: '/pandal/:id',
-          name: RouteNames.pandalDetail,
-          builder: (context, state) =>
-              PandalDetailScreen(pandalId: state.pathParameters['id']!),
-        ),
-        GoRoute(
-          path: '/map',
-          name: RouteNames.map,
-          builder: (context, state) => const MapScreen(),
-        ),
-        GoRoute(
-          path: '/route-planner',
-          name: RouteNames.routePlanner,
-          builder: (context, state) => const RoutePlannerScreen(),
-        ),
-        GoRoute(
-          path: '/favorites',
-          name: RouteNames.favorites,
-          builder: (context, state) => const FavoriteScreen(),
-        ),
-        GoRoute(
-          path: '/search',
-          name: RouteNames.search,
-          builder: (context, state) => const SearchScreen(),
-        ),
-        GoRoute(
-          path: '/profile',
-          name: RouteNames.profile,
-          builder: (context, state) => const ProfileScreen(),
-        ),
-        GoRoute(
-          path: '/premium',
-          name: RouteNames.premium,
-          builder: (context, state) => const PremiumScreen(),
-        ),
+       
         GoRoute(
           path: '/admin',
           name: RouteNames.adminDashboard,

@@ -1,0 +1,58 @@
+import 'package:durga_puja_pandel/views/widgets/pandel.dart';
+
+final pandals = [
+  Pandal(
+      'সুরুচি সংঘ',
+      'Suruchi Sangha',
+      'New Alipore',
+      '2.4 km',
+      '4.8',
+      'Moderate',
+      'Bengal Heritage',
+      'https://images.unsplash.com/photo-1609947017136-9daf32a5eb16?w=900'),
+  Pandal(
+      'মহম্মদ আলি পার্ক',
+      'Mohammad Ali Park',
+      'Central Kolkata',
+      '3.8 km',
+      '4.6',
+      'High',
+      'Modern Architecture',
+      'https://images.unsplash.com/photo-1567591370504-80142dc14bb0?w=900'),
+  Pandal(
+      'বাগবাজার সার্বজনীন',
+      'Bagbazar Sarbojanin',
+      'North Kolkata',
+      '5.1 km',
+      '4.9',
+      'Low',
+      'Classic Traditional',
+      'https://images.unsplash.com/photo-1606298855672-3efb63017be8?w=900'),
+  Pandal(
+      'বালিগঞ্জ কালচারাল',
+      'Ballygunge Cultural',
+      'South Kolkata',
+      '4.2 km',
+      '4.7',
+      'Moderate',
+      'Artistic',
+      'https://images.unsplash.com/photo-1604608672516-f1b9b1d37076?w=900'),
+  Pandal(
+      'দেশপ্রিয় পার্ক',
+      'Deshapriya Park',
+      'South Kolkata',
+      '3.1 km',
+      '4.5',
+      'Low',
+      'Eco Theme',
+      'https://images.unsplash.com/photo-1603088549155-6ae9395b928f?w=900'),
+  Pandal(
+      'শ্রীভূমি স্পোর্টিং',
+      'Sreebhumi Sporting',
+      'Salt Lake',
+      '6.3 km',
+      '4.4',
+      'High',
+      'Grand Theme',
+      'https://images.unsplash.com/photo-1605196560547-1fef94a8be89?w=900'),
+];
