@@ -20,7 +20,8 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(onExplore: () => setState(() => index = 1)),
+      // HomeScreen(onExplore: () => setState(() => index = 1)),
+      DurgaPujaHomePage(),
       ExploreScreen(saved: saved, onSaved: _toggleSaved),
       const MapScreen(),
       FavouritesScreen(saved: saved, onSaved: _toggleSaved),

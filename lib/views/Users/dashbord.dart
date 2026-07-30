@@ -1,140 +1,211 @@
-import 'package:durga_puja_pandel/core/theme/normal_color.dart';
-import 'package:durga_puja_pandel/core/utils/globa_data.dart';
-import 'package:durga_puja_pandel/views/widgets/pandel.dart';
-import 'package:durga_puja_pandel/views/widgets/roundIcon.dart';
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.onExplore});
-  final VoidCallback onExplore;
+class DurgaPujaHomePage extends StatelessWidget {
+  const DurgaPujaHomePage({super.key});
+
+  // Colors used in the UI
+  final Color primaryRed = const Color(0xFFA10E14);
+  final Color goldColor = const Color(0xFFF3C76F);
+  final Color darkText = const Color(0xFF2C2C2C);
+  final Color subText = const Color(0xFF757575);
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
-          sliver: SliverList.list(
+    return Scaffold(
+      backgroundColor: const Color(0xffFDF5E8),
+      body: Stack(
+        children: [
+          _buildHeader(context),
+
+          Positioned(
+            top: 160,
+            right: 0,
+            left: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Color(0xffFDF5E8),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+
+              child: Column(
+                children: [
+                  _buildFeaturedPandals(),
+                  const SizedBox(height: 24),
+
+                  // Upcoming events
+                  _buildUpcomingEvents(),
+
+                  // SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 1. Header Section (Red Background with Search)
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 16,
+        right: 16,
+        // bottom: 18,
+      ),
+      decoration: BoxDecoration(color: primaryRed),
+      child: Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined, color: gold, size: 18),
-                  const Text(
-                    ' Kolkata, West Bengal',
-                    style: TextStyle(color: muted),
+              const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+
+              Expanded(
+                child: Text(
+                  'Durga Puja Panel',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: goldColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'serif',
                   ),
-                  const Icon(Icons.keyboard_arrow_down, color: muted),
-                  // const Spacer(),
-                  // roundIcon(Icons.notifications_none),
-                  // const SizedBox(width: 10),
-                  // const CircleAvatar(
-                  //   radius: 23,
-                  //   backgroundImage: NetworkImage(
-                  //       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160'),
-                  // )
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'শুভ দুর্গাপূজা',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: gold,
                 ),
               ),
-              // const Text(
-              //   'Welcome back, Arjun 🙏',
-              //   style: TextStyle(color: muted, fontSize: 16),
-              // ),
-              const SizedBox(height: 22),
-              Row(
+
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  const Expanded(child: _Search()),
-                  const SizedBox(width: 10),
-                  Container(
-                    height: 56,
-                    width: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [red, Color(0xFFDC6C1B)],
+                  const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                  Positioned(
+                    top: 1,
+                    right: 1,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Colors.orange,
+                        shape: BoxShape.circle,
                       ),
-                      borderRadius: BorderRadius.circular(17),
                     ),
-                    child: const Icon(Icons.filter_alt_outlined, color: gold),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              _Hero(onPressed: onExplore),
-              // const SizedBox(height: 26),
-              // const SectionTitle('Categories'),
-              // const SizedBox(height: 14),
-              // const SingleChildScrollView(
-              //   scrollDirection: Axis.horizontal,
-              //   child: Row(
-              //     children: [
-              //       Category('📍', 'Nearby', true),
-              //       Category('⭐', 'Famous', false),
-              //       Category('🎨', 'Theme', false),
-              //       Category('🪔', 'Traditional', false),
-              //       Category('🏆', 'Award', false),
-              //       Category('👨‍👩‍👧', 'Family', false),
-              //     ],
-              //   ),
-              // ),
-              const SizedBox(height: 28),
-              const SectionTitle('Trending Pandals'),
-              const SizedBox(height: 14),
-              ...pandals
-                  .take(3)
-                  .map(
-                    (p) => Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: PandalTile(pandal: p),
-                    ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.location_on_rounded, color: primaryRed, size: 17),
+                const SizedBox(width: 5),
+                Text(
+                  'Kolkata, West Bengal',
+                  style: TextStyle(
+                    color: darkText,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
-              const SizedBox(height: 12),
-              const SectionTitle('Popular Areas'),
-              const SizedBox(height: 14),
-              const SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    AreaChip('Salt Lake', '38'),
-                    AreaChip('New Town', '24'),
-                    AreaChip('Behala', '31'),
-                    AreaChip('North Kolkata', '56'),
-                    AreaChip('South Kolkata', '44'),
-                    AreaChip('Dum Dum', '19'),
-                  ],
                 ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: primaryRed,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Container(
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  color: Colors.grey.shade500,
+                  size: 21,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'Search pandals, areas, events...',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
+                ),
+                Icon(Icons.tune_rounded, color: primaryRed, size: 20),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 2. Top Categories Section
+  Widget _buildTopCategories() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: _buildSectionHeader('Top Categories'),
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              _buildCategoryItem(Icons.account_balance, 'Top\nPandals', true),
+              _buildCategoryItem(Icons.map_outlined, 'South\nKolkata', false),
+              _buildCategoryItem(
+                Icons.explore_outlined,
+                'North\nKolkata',
+                false,
               ),
-              const SizedBox(height: 28),
-              // const SectionTitle('Live Crowd Updates', trailing: 'LIVE'),
-              // const SizedBox(height: 12),
-              // ...pandals.take(3).map((p) => CrowdRow(p)),
-              // const SizedBox(height: 28),
-              const SectionTitle('Upcoming Events', subtitle: 'আসন্ন অনুষ্ঠান'),
-              const SizedBox(height: 12),
-              const EventRow(
-                '🪔',
-                'Sandhi Puja',
-                'সন্ধিপূজা',
-                'Oct 11 · 11:48 PM',
+              _buildCategoryItem(
+                Icons.festival_outlined,
+                'Cultural\nEvents',
+                false,
               ),
-              const EventRow(
-                '🔥',
-                'Dhunuchi Dance',
-                'ধুনুচি নাচ',
-                'Oct 12 · 8:00 PM',
-              ),
-              const EventRow(
-                '🎶',
-                'Cultural Program',
-                'সাংস্কৃতিক অনুষ্ঠান',
-                'Oct 13 · 6:00 PM',
+              _buildCategoryItem(
+                Icons.restaurant_outlined,
+                'Food &\nFestivals',
+                false,
               ),
             ],
           ),
@@ -142,220 +213,361 @@ class HomeScreen extends StatelessWidget {
       ],
     );
   }
-}
 
-class _Search extends StatelessWidget {
-  const _Search();
-  @override
-  Widget build(BuildContext context) => TextField(
-    cursorColor: Colors.grey,
-    decoration: InputDecoration(
-      hintText: 'Search The Pandel....',
-      prefixIcon: const Icon(Icons.search, color: Colors.grey),
-      suffixIcon: const Icon(Icons.mic_none, color: Colors.grey),
-      filled: true,
-      hintStyle: TextStyle(color: Colors.grey),
-      fillColor: surface,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(17),
-        borderSide: const BorderSide(color: Colors.grey),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(17),
-        borderSide: const BorderSide(color: Colors.grey),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(17),
-        borderSide: const BorderSide(color: Colors.grey),
-      ),
-    ),
-  );
-}
-
-class _Hero extends StatelessWidget {
-  const _Hero({required this.onPressed});
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 245,
-    padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(25),
-      image: const DecorationImage(
-        image: NetworkImage(
-          'https://images.unsplash.com/photo-1604608672516-f1b9b1d37076?w=1200',
-        ),
-        fit: BoxFit.cover,
-        colorFilter: ColorFilter.mode(Color(0x55000000), BlendMode.darken),
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Chip(label: Text('🎉 PUJA 2025')),
-        const Spacer(),
-        const Text(
-          'Explore the Best\nPandals Near You',
-          style: TextStyle(
-            fontSize: 27,
-            height: 1.05,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'serif',
-          ),
-        ),
-        const Text(
-          'এই পুজোয় ঘুরে দেখুন সেরা প্যান্ডেল',
-          style: TextStyle(color: Color(0xFFFFD79B)),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: onPressed, child: const Text('Explore Now  ›')),
-      ],
-    ),
-  );
-}
-
-class SectionTitle extends StatelessWidget {
-  const SectionTitle(
-    this.title, {
-    super.key,
-    this.subtitle,
-    this.trailing = 'See all',
-  });
-  final String title, trailing;
-  final String? subtitle;
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+  Widget _buildCategoryItem(IconData icon, String title, bool isSelected) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: Column(
+        children: [
+          Container(
+            height: 70,
+            width: 70,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: isSelected
+                  ? Border.all(color: primaryRed.withOpacity(0.2), width: 2)
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            if (subtitle != null)
-              Text(
-                subtitle!,
-                style: const TextStyle(color: muted, fontSize: 12),
-              ),
-          ],
-        ),
-      ),
-      Text(
-        trailing,
-        style: TextStyle(
-          color: trailing == 'LIVE' ? Colors.redAccent : gold,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    ],
-  );
-}
-
-class Category extends StatelessWidget {
-  const Category(this.emoji, this.label, this.selected, {super.key});
-  final String emoji, label;
-  final bool selected;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: 12),
-    child: Column(
-      children: [
-        Container(
-          width: 72,
-          height: 70,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? red : surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: selected ? gold : border),
+            child: Center(child: Icon(icon, color: primaryRed, size: 32)),
           ),
-          child: Text(emoji, style: const TextStyle(fontSize: 27)),
-        ),
-        const SizedBox(height: 7),
-        Text(
-          label,
-          style: TextStyle(color: selected ? gold : muted, fontSize: 12),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 8),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: darkText,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-class AreaChip extends StatelessWidget {
-  const AreaChip(this.name, this.count, {super.key});
-  final String name, count;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 148,
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: border),
-    ),
-    child: Column(
+  // 3. Featured Pandals Section
+  Widget _buildFeaturedPandals() {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Text(
-          '$count pandals',
-          style: const TextStyle(color: muted, fontSize: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: _buildSectionHeader('Featured Pandals'),
         ),
-      ],
-    ),
-  );
-}
-
-class CrowdRow extends StatelessWidget {
-  const CrowdRow(this.pandal, {super.key});
-  final Pandal pandal;
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(14),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
             children: [
-              Text(
-                pandal.bn,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              _buildPandalCard(
+                'Sreebhumi Sporting Club',
+                '4.8',
+                'Lake Town',
+                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToCqLazlZe5ggFCO3xTnQcBhX3i8Yt4FRCw5vMeXRdIQ&s=10',
               ),
-              Text(
-                'Wait: ~${pandal.crowd == 'High'
-                    ? 40
-                    : pandal.crowd == 'Low'
-                    ? 5
-                    : 15} min · Best: 7:00 AM',
-                style: const TextStyle(color: muted, fontSize: 11),
+              _buildPandalCard(
+                'Santosh Mitra Square',
+                '4.7',
+                'Entally',
+                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToCqLazlZe5ggFCO3xTnQcBhX3i8Yt4FRCw5vMeXRdIQ&s=10',
+              ),
+              _buildPandalCard(
+                'Kumartuli Park',
+                '4.6',
+                'Kumartuli',
+                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToCqLazlZe5ggFCO3xTnQcBhX3i8Yt4FRCw5vMeXRdIQ&s=10',
               ),
             ],
           ),
         ),
-        Text(pandal.crowd, style: const TextStyle(color: gold)),
       ],
-    ),
-  );
-}
+    );
+  }
 
-class EventRow extends StatelessWidget {
-  const EventRow(this.icon, this.name, this.bn, this.time, {super.key});
-  final String icon, name, bn, time;
-  @override
-  Widget build(BuildContext context) => ListTile(
-    contentPadding: EdgeInsets.zero,
-    leading: CircleAvatar(backgroundColor: surface2, child: Text(icon)),
-    title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-    subtitle: Text('$bn · $time', style: const TextStyle(color: muted)),
-  );
+  Widget _buildPandalCard(
+    String name,
+    String rating,
+    String location,
+    String imageUrl,
+  ) {
+    return Container(
+      width: 150,
+      height: 220,
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Background Image
+            Image.network(
+              imageUrl,
+              height: 220,
+              width: 150,
+              fit: BoxFit.fill,
+              errorBuilder: (context, error, stackTrace) => Icon(Icons.error),
+            ),
+            // Gradient Overlay
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    primaryRed.withOpacity(0.9),
+                    primaryRed,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.4, 0.8, 1.0],
+                ),
+              ),
+            ),
+            // Bookmark Icon
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(
+                  Icons.bookmark_border,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
+            // Details
+            Positioned(
+              bottom: 12,
+              left: 12,
+              right: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        rating,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 4. Upcoming Events Section
+  Widget _buildUpcomingEvents() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Upcoming Events'),
+          const SizedBox(height: 16),
+          _buildEventCard(
+            '28',
+            'Maha Saptami',
+            'Puja & Pushpanjali',
+            '7:00 AM Onwards',
+          ),
+          const SizedBox(height: 12),
+          _buildEventCard(
+            '29',
+            'Maha Ashtami',
+            'Anjali & Bhog',
+            '7:00 AM Onwards',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventCard(
+    String date,
+    String title,
+    String subtitle,
+    String time,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Date Widget
+          Container(
+            width: 55,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: primaryRed.withOpacity(0.2)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: primaryRed,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(9),
+                      topRight: Radius.circular(9),
+                    ),
+                  ),
+                  child: const Text(
+                    'SEP',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    date,
+                    style: TextStyle(
+                      color: primaryRed,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          // Details Widget
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: darkText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(subtitle, style: TextStyle(color: subText, fontSize: 13)),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          // Bell Icon
+          Icon(Icons.notifications_none, color: primaryRed, size: 26),
+        ],
+      ),
+    );
+  }
+
+  // Reusable Section Header
+  Widget _buildSectionHeader(String title) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: darkText,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          'See All',
+          style: TextStyle(
+            color: primaryRed,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
 }

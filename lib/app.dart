@@ -113,20 +113,20 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
             title: 'Pujo Pandal Guide',
             debugShowCheckedModeBanner: false,
             // theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeController.themeMode,
+            // darkTheme: AppTheme.darkTheme,
+            // themeMode: themeController.themeMode,
             routerConfig: router,
 
-            theme: ThemeData(
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor: bg,
-              colorScheme: const ColorScheme.dark(
-                primary: gold,
-                secondary: red,
-              ),
-              fontFamily: 'Arial',
-              useMaterial3: true,
-            ),
+            // theme: ThemeData(
+            //   brightness: Brightness.dark,
+            //   scaffoldBackgroundColor: bg,
+            //   colorScheme: const ColorScheme.dark(
+            //     primary: gold,
+            //     secondary: red,
+            //   ),
+            //   fontFamily: 'Arial',
+            //   useMaterial3: true,
+            // ),
           );
         },
       ),
