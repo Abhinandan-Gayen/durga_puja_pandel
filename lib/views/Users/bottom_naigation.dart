@@ -21,7 +21,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final screens = [
       // HomeScreen(onExplore: () => setState(() => index = 1)),
-      DurgaPujaHomePage(),
+      DurgaPujaHomeScreen(),
       ExploreScreen(saved: saved, onSaved: _toggleSaved),
       const MapScreen(),
       FavouritesScreen(saved: saved, onSaved: _toggleSaved),
