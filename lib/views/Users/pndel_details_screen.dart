@@ -1,6 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
-
-
+import 'package:go_router/go_router.dart';
 
 class PandalDetailScreen extends StatelessWidget {
   const PandalDetailScreen({super.key});
@@ -32,34 +33,8 @@ class PandalDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Top Action Buttons (Back, Bookmark, Share)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.bookmark, color: Colors.white),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.share, color: Colors.white),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
 
           // Scrollable Content
           SingleChildScrollView(
@@ -85,7 +60,7 @@ class PandalDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Ratings and Badge
                     Row(
                       children: [
@@ -109,7 +84,10 @@ class PandalDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.orange.shade50,
                             borderRadius: BorderRadius.circular(12),
@@ -117,7 +95,11 @@ class PandalDetailScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.emoji_events, color: Colors.orange.shade700, size: 16),
+                              Icon(
+                                Icons.emoji_events,
+                                color: Colors.orange.shade700,
+                                size: 16,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 'Top Rated',
@@ -133,11 +115,15 @@ class PandalDetailScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Location
                     Row(
                       children: [
-                        Icon(Icons.location_on_outlined, color: Colors.brown.shade400, size: 18),
+                        Icon(
+                          Icons.location_on_outlined,
+                          color: Colors.brown.shade400,
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Lake Town, Kolkata, West Bengal',
@@ -216,9 +202,59 @@ class PandalDetailScreen extends StatelessWidget {
                       title: 'Puja Time',
                       subtitle: '7:00 AM, 11:00 AM, 4:00 PM, 8:00 PM',
                     ),
-                    
+
                     // Extra space at bottom for the fixed action bar
                     const SizedBox(height: 80),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildTopActionButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () {
+                        debugPrint('BACK BUTTON CLICKED');
+
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          Navigator.of(context).maybePop();
+                        }
+                      },
+                    ),
+
+                    Row(
+                      children: [
+                        _buildTopActionButton(
+                          icon: Icons.bookmark_border_rounded,
+                          onTap: () {
+                            debugPrint('BOOKMARK BUTTON CLICKED');
+                          },
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        _buildTopActionButton(
+                          icon: Icons.share_outlined,
+                          onTap: () {
+                            debugPrint('SHARE BUTTON CLICKED');
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -371,10 +407,7 @@ class PandalDetailScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -418,7 +451,11 @@ class PandalDetailScreen extends StatelessWidget {
                 icon: const Icon(Icons.near_me, color: Colors.white, size: 18),
                 label: const Text(
                   'Navigate',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF941212),
@@ -435,10 +472,18 @@ class PandalDetailScreen extends StatelessWidget {
               flex: 4,
               child: OutlinedButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.bookmark_border, color: Color(0xFF941212), size: 18),
+                icon: const Icon(
+                  Icons.bookmark_border,
+                  color: Color(0xFF941212),
+                  size: 18,
+                ),
                 label: const Text(
                   'Save',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF941212)),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF941212),
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFF941212), width: 1.2),
@@ -455,10 +500,18 @@ class PandalDetailScreen extends StatelessWidget {
               flex: 4,
               child: OutlinedButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.share_outlined, color: Color(0xFF941212), size: 18),
+                icon: const Icon(
+                  Icons.share_outlined,
+                  color: Color(0xFF941212),
+                  size: 18,
+                ),
                 label: const Text(
                   'Share',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF941212)),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF941212),
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFF941212), width: 1.2),
@@ -471,6 +524,26 @@ class PandalDetailScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.black.withOpacity(0.35),
+      shape: const CircleBorder(),
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
       ),
     );

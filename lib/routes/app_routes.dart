@@ -81,7 +81,7 @@ class AppRoutes {
           name: RouteNames.home,
           builder: (context, state) => const AppShell(),
         ),
-       
+
         GoRoute(
           path: '/admin',
           name: RouteNames.adminDashboard,
@@ -109,7 +109,7 @@ class AppRoutes {
           builder: (context, state) => const UploadMediaScreen(),
         ),
         GoRoute(
-          path: '/Pandel_details',
+          path: '/pandal-details',
           name: RouteNames.pandalDetails,
           builder: (context, state) => const PandalDetailScreen(),
         ),

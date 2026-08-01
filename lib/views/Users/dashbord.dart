@@ -423,7 +423,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             ),
             child: InkWell(
               onTap: () {
-                context.push('/Pandel_details', extra: pandal);
+                context.push('/pandal-details', extra: pandal);
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
