@@ -22,7 +22,7 @@ class AppShell extends StatelessWidget {
             saved: controller.saved,
             onSaved: controller.toggleSaved,
           ),
-          const MapScreen(),
+          const CardScreen(),
           FavouritesScreen(
             saved: controller.saved,
             onSaved: controller.toggleSaved,

@@ -1,144 +1,770 @@
-import 'package:durga_puja_pandel/core/theme/normal_color.dart';
-import 'package:durga_puja_pandel/core/utils/globa_data.dart';
-import 'package:durga_puja_pandel/views/widgets/pandel.dart';
 import 'package:flutter/material.dart';
 
-class MapScreen extends StatelessWidget {
-  const MapScreen({super.key});
+class CardScreen extends StatefulWidget {
+  const CardScreen({super.key});
+
+  @override
+  State<CardScreen> createState() => _CardScreenState();
+}
+
+class _CardScreenState extends State<CardScreen> {
+  final PageController _pageController = PageController(viewportFraction: 0.88);
+
+  int currentCardIndex = 0;
+
+  final List<Map<String, dynamic>> pandals = [
+    {
+      'title': 'Sreebhumi Sporting Club',
+      'location': 'Lake Town, Kolkata',
+      'distance': '5.2 km',
+      'rating': '4.8',
+      'ratingCount': '2.3K',
+      'crowd': 'High',
+      'status': 'Open',
+      'closingTime': 'Closes 11:30 PM',
+      'eta': '18 min',
+      'image':
+          'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?w=500',
+    },
+    {
+      'title': 'Suruchi Sangha',
+      'location': 'New Alipore, Kolkata',
+      'distance': '2.4 km',
+      'rating': '4.7',
+      'ratingCount': '1.8K',
+      'crowd': 'Moderate',
+      'status': 'Open',
+      'closingTime': 'Closes 12:00 AM',
+      'eta': '12 min',
+      'image':
+          'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=500',
+    },
+    {
+      'title': 'Santosh Mitra Square',
+      'location': 'Entally, Kolkata',
+      'distance': '3.8 km',
+      'rating': '4.9',
+      'ratingCount': '3.1K',
+      'crowd': 'Very High',
+      'status': 'Open',
+      'closingTime': 'Closes 1:00 AM',
+      'eta': '22 min',
+      'image':
+          'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=500',
+    },
+  ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(child: CustomPaint(painter: MapPainter())),
-        const Positioned(
-          top: 22,
-          left: 20,
-          child: Text(
-            'Pandal Map · Kolkata',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+    return Scaffold(
+      body: Stack(
+        children: [
+          // ================= MAP BACKGROUND =================
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/map_background.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: const Color(0xFFF3EBDD),
+                  child: CustomPaint(painter: MapBackgroundPainter()),
+                );
+              },
+            ),
           ),
+
+          // ================= MAP ROUTE =================
+          Positioned.fill(
+            child: IgnorePointer(child: CustomPaint(painter: RoutePainter())),
+          ),
+
+          // ================= MAP MARKERS =================
+          const Positioned(top: 130, left: 65, child: MapMarker()),
+
+          const Positioned(top: 180, right: 60, child: MapMarker()),
+
+          const Positioned(top: 250, left: 125, child: MapMarker()),
+
+          const Positioned(top: 330, right: 85, child: MapMarker()),
+
+          const Positioned(top: 390, left: 80, child: CurrentLocationMarker()),
+
+          // ================= TOP APP BAR =================
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 58,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFB91419),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x26000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(context).maybePop();
+                      },
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+
+                    const Expanded(
+                      child: Text(
+                        'Map & Locations',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+
+                    IconButton(
+                      onPressed: () {
+                        debugPrint('Filter clicked');
+                      },
+                      icon: const Icon(
+                        Icons.filter_alt_outlined,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ================= RIGHT MAP BUTTONS =================
+          Positioned(
+            right: 14,
+            top: 170,
+            child: Column(
+              children: [
+                _buildMapActionButton(
+                  icon: Icons.my_location_rounded,
+                  onTap: () {
+                    debugPrint('Current location clicked');
+                  },
+                ),
+
+                const SizedBox(height: 10),
+
+                _buildMapActionButton(
+                  icon: Icons.layers_outlined,
+                  onTap: () {
+                    debugPrint('Map layer clicked');
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // ================= HORIZONTAL CARDS =================
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 28,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: pandals.length,
+                    physics: const BouncingScrollPhysics(),
+                    onPageChanged: (value) {
+                      setState(() {
+                        currentCardIndex = value;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final pandal = pandals[index];
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 6,
+                        ),
+                        child: MapPandalCard(
+                          title: pandal['title'],
+                          location: pandal['location'],
+                          distance: pandal['distance'],
+                          rating: pandal['rating'],
+                          ratingCount: pandal['ratingCount'],
+                          crowd: pandal['crowd'],
+                          status: pandal['status'],
+                          closingTime: pandal['closingTime'],
+                          eta: pandal['eta'],
+                          imageUrl: pandal['image'],
+                          onFavourite: () {
+                            debugPrint('${pandal['title']} favourite clicked');
+                          },
+                          onDirection: () {
+                            debugPrint('${pandal['title']} direction clicked');
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(pandals.length, (index) {
+                    final bool isSelected = index == currentCardIndex;
+
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: isSelected ? 18 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFB91419)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x33000000), blurRadius: 3),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      elevation: 4,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: const Color(0xFF665D58), size: 22),
         ),
-        Positioned(
-          top: 62,
-          left: 16,
-          right: 16,
-          child: Row(
+      ),
+    );
+  }
+}
+
+// =========================================================
+// PANDAL CARD
+// =========================================================
+
+class MapPandalCard extends StatelessWidget {
+  final String title;
+  final String location;
+  final String distance;
+  final String rating;
+  final String ratingCount;
+  final String crowd;
+  final String status;
+  final String closingTime;
+  final String eta;
+  final String imageUrl;
+  final VoidCallback onFavourite;
+  final VoidCallback onDirection;
+
+  const MapPandalCard({
+    super.key,
+    required this.title,
+    required this.location,
+    required this.distance,
+    required this.rating,
+    required this.ratingCount,
+    required this.crowd,
+    required this.status,
+    required this.closingTime,
+    required this.eta,
+    required this.imageUrl,
+    required this.onFavourite,
+    required this.onDirection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const Color primaryRed = Color(0xFFB91419);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFCF7),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFEBDCCC)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _mapMode('Standard', true),
-              _mapMode('Satellite', false),
-              _mapMode('Crowd Heat', false),
+              // Image
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Image.network(
+                  imageUrl,
+                  width: 82,
+                  height: 90,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 82,
+                      height: 90,
+                      color: primaryRed,
+                      child: const Icon(
+                        Icons.temple_hindu,
+                        color: Colors.white,
+                        size: 42,
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Information
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF29231F),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+
+                        InkWell(
+                          onTap: onFavourite,
+                          borderRadius: BorderRadius.circular(20),
+                          child: const Padding(
+                            padding: EdgeInsets.all(3),
+                            child: Icon(
+                              Icons.bookmark_border_rounded,
+                              color: primaryRed,
+                              size: 21,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFB300),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '$rating ($ratingCount)',
+                          style: const TextStyle(
+                            color: Color(0xFF625952),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFEEE6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.local_fire_department_outlined,
+                                color: Color(0xFFE9673F),
+                                size: 12,
+                              ),
+                              SizedBox(width: 3),
+                              Text(
+                                'Popular',
+                                style: TextStyle(
+                                  color: Color(0xFFE9673F),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 7),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          color: Color(0xFF7E746E),
+                          size: 15,
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF746B65),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 7),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.circle,
+                          color: Color(0xFF42A846),
+                          size: 8,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          status,
+                          style: const TextStyle(
+                            color: Color(0xFF42A846),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '• $closingTime',
+                          style: const TextStyle(
+                            color: Color(0xFF6C625C),
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        const Positioned(left: 52, top: 170, child: MapPin('Bagbazar')),
-        const Positioned(right: 52, top: 220, child: MapPin('Sreebhumi')),
-        const Positioned(
-          left: 92,
-          top: 300,
-          child: MapPin('Suruchi', active: true),
-        ),
-        const Positioned(right: 100, top: 410, child: MapPin('Ali Park')),
-        const Positioned(left: 60, top: 500, child: MapPin('Deshapriya')),
-        const Positioned(right: 46, top: 530, child: MapPin('Ballygunge')),
-        Positioned(
-          left: 18,
-          right: 18,
-          bottom: 18,
-          child: PandalTile(pandal: pandals.first, compact: true),
+
+          // const SizedBox(height: 10),
+
+          // Container(
+          //   padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
+          //   decoration: BoxDecoration(
+          //     color: const Color(0xFFFFF7EC),
+          //     borderRadius: BorderRadius.circular(14),
+          //     border: Border.all(color: const Color(0xFFF0E3D4)),
+          //   ),
+          //   child: Row(
+          //     children: [
+          //       Expanded(
+          //         child: _buildInfoItem(
+          //           icon: Icons.directions_car_outlined,
+          //           label: 'ETA',
+          //           value: eta,
+          //           subValue: distance,
+          //         ),
+          //       ),
+
+          //       Container(width: 1, height: 33, color: const Color(0xFFE7D9CA)),
+
+          //       Expanded(
+          //         child: _buildInfoItem(
+          //           icon: Icons.groups_2_outlined,
+          //           label: 'Crowd',
+          //           value: crowd,
+          //           valueColor: primaryRed,
+          //           subValue: 'Expect Delay',
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          const SizedBox(height: 10),
+
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: onDirection,
+              icon: const Icon(
+                Icons.near_me_outlined,
+                color: Colors.white,
+                size: 17,
+              ),
+              label: const Text(
+                'Directions',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryRed,
+                elevation: 3,
+                shadowColor: primaryRed.withOpacity(0.35),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required String subValue,
+    Color? valueColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: const Color(0xFF5E554F), size: 21),
+
+        const SizedBox(width: 8),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(color: Color(0xFF8A817A), fontSize: 9),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                color: valueColor ?? const Color(0xFF332D29),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              subValue,
+              style: const TextStyle(color: Color(0xFF8A817A), fontSize: 8),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class MapPainter extends CustomPainter {
+// =========================================================
+// MAP MARKER
+// =========================================================
+
+class MapMarker extends StatelessWidget {
+  const MapMarker({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 42,
+      height: 52,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Icon(
+            Icons.location_on,
+            color: Color(0xFFB91419),
+            size: 46,
+            shadows: [
+              Shadow(
+                color: Colors.black38,
+                blurRadius: 5,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          Positioned(
+            top: 9,
+            child: Icon(Icons.temple_hindu, color: Colors.white, size: 17),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CurrentLocationMarker extends StatelessWidget {
+  const CurrentLocationMarker({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1689E8),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 6)],
+      ),
+    );
+  }
+}
+
+// =========================================================
+// DUMMY MAP BACKGROUND PAINTER
+// =========================================================
+
+class MapBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFF1A0909),
-    );
-    final grid = Paint()
-      ..color = border.withValues(alpha: .42)
-      ..strokeWidth = 1;
-    for (double x = 0; x < size.width; x += 44) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
-    }
-    for (double y = 0; y < size.height; y += 44) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
-    }
-    final road = Paint()
-      ..color = const Color(0xFF67451A)
-      ..strokeWidth = 6
+    final roadPaint = Paint()
+      ..color = Colors.white.withOpacity(0.9)
+      ..strokeWidth = 8
       ..style = PaintingStyle.stroke;
-    final p = Path()
-      ..moveTo(0, size.height * .42)
-      ..cubicTo(
-        size.width * .3,
-        size.height * .34,
-        size.width * .55,
-        size.height * .52,
-        size.width,
-        size.height * .4,
+
+    final smallRoadPaint = Paint()
+      ..color = Colors.white.withOpacity(0.65)
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke;
+
+    for (double y = 70; y < size.height; y += 90) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 40), roadPaint);
+    }
+
+    for (double x = 30; x < size.width; x += 80) {
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x + 30, size.height),
+        smallRoadPaint,
       );
-    canvas.drawPath(p, road);
-    canvas.drawLine(
-      Offset(size.width * .33, 0),
-      Offset(size.width * .32, size.height),
-      road,
-    );
-    canvas.drawLine(
-      Offset(size.width * .7, 0),
-      Offset(size.width * .65, size.height),
-      road,
-    );
+    }
+
+    final riverPaint = Paint()
+      ..color = const Color(0xFF8ED5EE)
+      ..strokeWidth = 38
+      ..style = PaintingStyle.stroke;
+
+    final riverPath = Path()
+      ..moveTo(size.width * 0.75, 0)
+      ..cubicTo(
+        size.width * 0.55,
+        size.height * 0.3,
+        size.width * 0.95,
+        size.height * 0.5,
+        size.width * 0.62,
+        size.height,
+      );
+
+    canvas.drawPath(riverPath, riverPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
 }
 
-Widget _mapMode(String text, bool active) => Padding(
-  padding: const EdgeInsets.only(right: 7),
-  child: Chip(
-    backgroundColor: active ? gold : surface,
-    label: Text(text, style: TextStyle(color: active ? bg : Colors.white)),
-  ),
-);
+// =========================================================
+// ROUTE PAINTER
+// =========================================================
 
-
-class MapPin extends StatelessWidget {
-  const MapPin(this.label, {super.key, this.active = false});
-  final String label;
-  final bool active;
+class RoutePainter extends CustomPainter {
   @override
-  Widget build(BuildContext context) => Column(children: [
-        Container(
-          width: active ? 48 : 38,
-          height: active ? 48 : 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: active ? gold : red,
-              boxShadow: [
-                if (active)
-                  BoxShadow(
-                      color: gold.withValues(alpha: .35),
-                      blurRadius: 24,
-                      spreadRadius: 15)
-              ]),
-          child: const Text('🛕'),
-        ),
-        Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-                color: bg, borderRadius: BorderRadius.circular(7)),
-            child:
-                Text(label, style: const TextStyle(color: gold, fontSize: 9))),
-      ]);
+  void paint(Canvas canvas, Size size) {
+    final Paint routePaint = Paint()
+      ..color = const Color(0xFFD52B2F)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final Path routePath = Path()
+      ..moveTo(size.width * 0.23, size.height * 0.46)
+      ..cubicTo(
+        size.width * 0.30,
+        size.height * 0.40,
+        size.width * 0.38,
+        size.height * 0.48,
+        size.width * 0.48,
+        size.height * 0.39,
+      )
+      ..cubicTo(
+        size.width * 0.58,
+        size.height * 0.30,
+        size.width * 0.66,
+        size.height * 0.36,
+        size.width * 0.74,
+        size.height * 0.25,
+      );
+
+    canvas.drawPath(routePath, routePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
 }
-
-
-
-
-
