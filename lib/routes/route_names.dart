@@ -20,4 +20,5 @@ class RouteNames {
   static const editPandal = 'editPandal';
   static const managePandals = 'managePandals';
   static const uploadMedia = 'uploadMedia';
+  static const pandalDetails = 'pandalDetails';
 }

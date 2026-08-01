@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class DurgaPujaHomeScreen extends StatefulWidget {
   const DurgaPujaHomeScreen({super.key});
@@ -11,8 +14,6 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   static const Color primaryRed = Color(0xFFB91419);
   static const Color darkRed = Color(0xFF8C1115);
   static const Color creamColor = Color(0xFFFFF8E9);
-
-
 
   final List<Map<String, dynamic>> categories = [
     {'icon': Icons.temple_hindu_outlined, 'title': 'Top\nPandals'},
@@ -421,7 +422,9 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
               ],
             ),
             child: InkWell(
-              onTap: () {},
+              onTap: () {
+                context.push('/Pandel_details', extra: pandal);
+              },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -696,6 +699,4 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   // =========================================================
   // BOTTOM NAVIGATION
   // =========================================================
-
- 
 }

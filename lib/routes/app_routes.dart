@@ -1,4 +1,5 @@
 import 'package:durga_puja_pandel/views/Users/bottom_naigation.dart';
+import 'package:durga_puja_pandel/views/Users/pndel_details_screen.dart';
 import 'package:go_router/go_router.dart';
 
 import '../controllers/auth_controller.dart';
@@ -106,6 +107,11 @@ class AppRoutes {
           path: '/admin/upload-media',
           name: RouteNames.uploadMedia,
           builder: (context, state) => const UploadMediaScreen(),
+        ),
+        GoRoute(
+          path: '/Pandel_details',
+          name: RouteNames.pandalDetails,
+          builder: (context, state) => const PandalDetailScreen(),
         ),
       ],
     );
