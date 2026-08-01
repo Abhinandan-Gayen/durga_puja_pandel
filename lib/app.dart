@@ -1,4 +1,3 @@
-import 'package:durga_puja_pandel/core/theme/normal_color.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +16,6 @@ import 'core/services/firebase_auth_service.dart';
 import 'core/services/firestore_service.dart';
 import 'core/services/location_service.dart';
 import 'core/services/map_service.dart';
-import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 
 class PujoPandalGuideApp extends StatefulWidget {

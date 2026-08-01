@@ -251,7 +251,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
         }
         return;
       }
-      if (position == null || !mounted) return;
+      if (!mounted) return;
 
       List<Placemark> placemarks;
       try {
@@ -288,7 +288,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       setState(() {
         _locationPreview = LocationPickerResult(
           latitude: position!.latitude,
-          longitude: position!.longitude,
+          longitude: position.longitude,
           area: _areaController.text,
           city: _city,
           address: _addressController.text,
@@ -818,8 +818,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                   Icons.image_rounded,
                                   hint: 'Enter public image URL',
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty)
+                                    if (v == null || v.trim().isEmpty) {
                                       return 'Thumbnail URL is required';
+                                    }
                                     return _validateUrl(v);
                                   },
                                 ),
@@ -871,12 +872,14 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                   minLines: 3,
                                   maxLines: 5,
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty)
+                                    if (v == null || v.trim().isEmpty) {
                                       return null;
+                                    }
                                     final error = _validateUrlList(v);
                                     if (error != null) return error;
-                                    if (_parseUrls(v).length > 2)
+                                    if (_parseUrls(v).length > 2) {
                                       return 'Maximum 2 video URLs are allowed';
+                                    }
                                     return null;
                                   },
                                 ),
@@ -1102,8 +1105,7 @@ class _Field extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
-    this.minLines,
-  });
+  }) : minLines = null;
 
   final TextEditingController controller;
   final String label;
@@ -1198,7 +1200,7 @@ class _Dropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final safeValue = items.contains(value) ? value : null;
     return DropdownButtonFormField<T>(
-      value: safeValue,
+      initialValue: safeValue,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Container(
@@ -1280,7 +1282,7 @@ class _SettingToggle extends StatelessWidget {
             ? Text(sub!, style: Theme.of(context).textTheme.bodySmall)
             : null,
         value: value,
-        activeColor: AppColors.deepRed,
+        activeThumbColor: AppColors.deepRed,
         onChanged: onChanged,
       ),
     );

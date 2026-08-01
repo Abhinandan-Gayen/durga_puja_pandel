@@ -199,7 +199,7 @@ class _PandalInfo extends StatelessWidget {
 
 
 class OpenPill extends StatelessWidget {
-  const OpenPill();
+  const OpenPill({super.key});
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

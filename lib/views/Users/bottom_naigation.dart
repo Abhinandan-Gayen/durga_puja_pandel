@@ -1,4 +1,3 @@
-import 'package:durga_puja_pandel/core/theme/normal_color.dart';
 import 'package:durga_puja_pandel/views/Users/Explore.dart';
 import 'package:durga_puja_pandel/views/Users/dashbord.dart';
 import 'package:durga_puja_pandel/views/Users/favoutiry.dart';

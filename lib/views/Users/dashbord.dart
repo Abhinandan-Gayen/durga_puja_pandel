@@ -476,7 +476,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                             width: 21,
                             height: 21,
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.28),
+                              color: Colors.black.withValues(alpha: 0.28),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
