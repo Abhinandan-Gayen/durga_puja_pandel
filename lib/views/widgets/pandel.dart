@@ -36,9 +36,16 @@ class PandalTile extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: border),
+        // border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.05),
+            blurRadius: 5,
+            offset: const Offset(0, 9),
+          ),
+        ],
       ),
       child: compact
           ? Padding(
@@ -63,7 +70,7 @@ class PandalTile extends StatelessWidget {
                     onPressed: onSaved,
                     icon: Icon(
                       saved ? Icons.favorite : Icons.favorite_border,
-                      color: gold,
+                      color: !saved ? null : Colors.red,
                     ),
                   ),
                 ],
@@ -197,17 +204,18 @@ class _PandalInfo extends StatelessWidget {
   );
 }
 
-
 class OpenPill extends StatelessWidget {
   const OpenPill({super.key});
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-            color: const Color(0xCC073E21),
-            borderRadius: BorderRadius.circular(20)),
-        child: const Text('● Open',
-            style: TextStyle(color: Colors.greenAccent, fontSize: 11)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: const Color(0xCC073E21),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: const Text(
+      '● Open',
+      style: TextStyle(color: Colors.greenAccent, fontSize: 11),
+    ),
+  );
 }
-
