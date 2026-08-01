@@ -1,4 +1,4 @@
-import 'package:durga_puja_pandel/views/Users/bottom_naigation.dart';
+import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/ui/bottom_naigation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../controllers/auth_controller.dart';

@@ -1,7 +1,7 @@
+import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
 import 'controllers/admin_pandal_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/favorite_controller.dart';
@@ -102,6 +102,7 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
         ChangeNotifierProvider(
           create: (_) => MapController(mapService, locationService),
         ),
+        ChangeNotifierProvider(create: (_) => AppShellController()),
       ],
       child: Consumer2<AuthController, ThemeController>(
         builder: (context, authController, themeController, _) {

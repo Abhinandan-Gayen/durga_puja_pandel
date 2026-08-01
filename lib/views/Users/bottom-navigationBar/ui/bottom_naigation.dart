@@ -1,66 +1,75 @@
 import 'package:durga_puja_pandel/views/Users/Explore.dart';
+import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:durga_puja_pandel/views/Users/dashbord.dart';
 import 'package:durga_puja_pandel/views/Users/favoutiry.dart';
 import 'package:durga_puja_pandel/views/Users/map.dart';
 import 'package:durga_puja_pandel/views/Users/profile.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class AppShell extends StatefulWidget {
+class AppShell extends StatelessWidget {
   const AppShell({super.key});
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
 
-class _AppShellState extends State<AppShell> {
-  int index = 0;
-  final saved = <int>{0, 2};
-  int selectedBottomIndex = 0;
   static const Color primaryRed = Color(0xFFB91419);
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      // HomeScreen(onExplore: () => setState(() => index = 1)),
-      DurgaPujaHomeScreen(),
-      ExploreScreen(saved: saved, onSaved: _toggleSaved),
-      const MapScreen(),
-      FavouritesScreen(saved: saved, onSaved: _toggleSaved),
-      const ProfileScreen(),
-    ];
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: IndexedStack(index: index, children: screens),
+    return Consumer<AppShellController>(
+      builder: (context, controller, child) {
+        final screens = [
+          DurgaPujaHomeScreen(),
+          ExploreScreen(
+            saved: controller.saved,
+            onSaved: controller.toggleSaved,
           ),
-        ),
-      ),
-      bottomNavigationBar: _buildBottomNavigation(),
+          const MapScreen(),
+          FavouritesScreen(
+            saved: controller.saved,
+            onSaved: controller.toggleSaved,
+          ),
+          const ProfileScreen(),
+        ];
+
+        return Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: IndexedStack(
+                  index: controller.selectedIndex,
+                  children: screens,
+                ),
+              ),
+            ),
+          ),
+          bottomNavigationBar: _buildBottomNavigation(controller),
+        );
+      },
     );
   }
 
-  void _toggleSaved(int value) => setState(() {
-    saved.contains(value) ? saved.remove(value) : saved.add(value);
-  });
-
-  Widget _buildBottomNavigation() {
+  Widget _buildBottomNavigation(AppShellController controller) {
     final List<Map<String, dynamic>> items = [
-      {'icon': Icons.map_outlined, 'selectedIcon': Icons.map, 'title': 'Map'},
+      {
+        'icon': Icons.home_outlined,
+        'selectedIcon': Icons.home,
+        'title': 'Home',
+      },
       {
         'icon': Icons.near_me_outlined,
         'selectedIcon': Icons.near_me,
         'title': 'Nearby',
       },
+      {'icon': Icons.map_outlined, 'selectedIcon': Icons.map, 'title': 'Map'},
       {
         'icon': Icons.favorite_border_rounded,
         'selectedIcon': Icons.favorite_rounded,
         'title': 'Saved',
       },
       {
-        'icon': Icons.route_outlined,
-        'selectedIcon': Icons.route,
-        'title': 'Routes',
+        'icon': Icons.person_outline,
+        'selectedIcon': Icons.person,
+        'title': 'Profile',
       },
     ];
 
@@ -82,14 +91,12 @@ class _AppShellState extends State<AppShell> {
       child: Row(
         children: List.generate(items.length, (index) {
           final item = items[index];
-          final bool isSelected = selectedBottomIndex == index;
+          final bool isSelected = controller.selectedIndex == index;
 
           return Expanded(
             child: InkWell(
               onTap: () {
-                setState(() {
-                  selectedBottomIndex = index;
-                });
+                controller.setIndex(index);
               },
               borderRadius: BorderRadius.circular(20),
               child: Column(
