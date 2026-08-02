@@ -21,12 +21,24 @@ class FavouritesScreen extends StatefulWidget {
 }
 
 class _FavouritesScreenState extends State<FavouritesScreen> {
+  String _query = '';
+
   @override
   Widget build(BuildContext context) {
     final firebasePandals = context.watch<PandalController>().pandals;
     final savedIndexes = widget.saved
         .where((index) => index >= 0 && index < firebasePandals.length)
         .toList();
+    final normalizedQuery = _query.trim().toLowerCase();
+    final visibleSavedIndexes = savedIndexes.where((index) {
+      if (normalizedQuery.isEmpty) return true;
+      final pandal = firebasePandals[index];
+      return pandal.name.toLowerCase().contains(normalizedQuery) ||
+          pandal.area.toLowerCase().contains(normalizedQuery) ||
+          pandal.city.toLowerCase().contains(normalizedQuery) ||
+          pandal.address.toLowerCase().contains(normalizedQuery) ||
+          pandal.description.toLowerCase().contains(normalizedQuery);
+    }).toList();
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8E9),
       appBar: AppBar(
@@ -51,7 +63,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         children: [
           Container(
             height: 50, // হাইট বাড়ানো হয়েছে
@@ -69,6 +81,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
               ],
             ),
             child: TextField(
+              onChanged: (value) => setState(() => _query = value),
               cursorColor: const Color.fromARGB(255, 216, 113, 117),
               style: const TextStyle(color: Color(0xFF333333), fontSize: 15),
               decoration: InputDecoration(
@@ -96,7 +109,9 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
           Row(
             children: [
               Text(
-                '${savedIndexes.length} pandals saved',
+                normalizedQuery.isEmpty
+                    ? '${savedIndexes.length} pandals saved'
+                    : '${visibleSavedIndexes.length} pandals found',
                 style: const TextStyle(color: Colors.black, fontSize: 16),
               ),
               const Spacer(),
@@ -104,13 +119,19 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          if (savedIndexes.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(50),
-              child: Center(child: Text('No favourites yet')),
+          if (visibleSavedIndexes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(50),
+              child: Center(
+                child: Text(
+                  normalizedQuery.isEmpty
+                      ? 'No favourites yet'
+                      : 'No matching favourite found',
+                ),
+              ),
             )
           else
-            ...savedIndexes.map((index) {
+            ...visibleSavedIndexes.map((index) {
               final firebasePandal = firebasePandals[index];
               final imageUrl = firebasePandal.thumbnailUrl.isNotEmpty
                   ? firebasePandal.thumbnailUrl
