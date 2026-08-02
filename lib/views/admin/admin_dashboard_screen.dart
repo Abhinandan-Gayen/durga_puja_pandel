@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/admin_pandal_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/theme/app_colors.dart';
-import '../../routes/route_names.dart';
 import '../widgets/loading_widget.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -59,6 +58,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         title: const Text('Admin Dashboard'),
         elevation: 0,
         scrolledUnderElevation: 1,
+        actions: [
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: () async {
+              final auth = context.read<AuthController>();
+              await auth.logout();
+              Get.offAllNamed('/home');
+            },
+          ),
+        ],
       ),
       body: Consumer<AdminPandalController>(
         builder: (context, admin, _) {
@@ -115,7 +125,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           label: 'Add New Pandal',
                           subtitle: 'Create a new pandal listing',
                           color: AppColors.deepRed,
-                          onTap: () => context.pushNamed(RouteNames.addPandal),
+                          onTap: () => Get.toNamed('/admin/add-pandal'),
                         ),
                         const SizedBox(height: 10),
                         _QuickActionTile(
@@ -123,7 +133,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           label: 'Manage Pandals',
                           subtitle: 'Edit, activate or feature listings',
                           color: AppColors.festiveOrange,
-                          onTap: () => context.pushNamed(RouteNames.managePandals),
+                          onTap: () => Get.toNamed('/admin/manage-pandals'),
                         ),
                         const SizedBox(height: 10),
                         _QuickActionTile(
@@ -131,7 +141,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           label: 'View Map',
                           subtitle: 'Browse pandals on the map',
                           color: const Color(0xFF1565C0),
-                          onTap: () => context.pushNamed(RouteNames.map),
+                          onTap: () => Get.toNamed('/map'),
                         ),
                         const SizedBox(height: 10),
                         _QuickActionTile(
@@ -139,7 +149,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           label: 'Upload Media',
                           subtitle: 'Upload images and videos to Cloudinary',
                           color: const Color(0xFF6A1B9A),
-                          onTap: () => context.pushNamed(RouteNames.uploadMedia),
+                          onTap: () => Get.toNamed('/admin/upload-media'),
                         ),
                       ],
                     ),

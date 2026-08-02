@@ -1,6 +1,5 @@
-
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 
 class PandalDetailScreen extends StatelessWidget {
   const PandalDetailScreen({super.key});
@@ -227,10 +226,10 @@ class PandalDetailScreen extends StatelessWidget {
                       onTap: () {
                         debugPrint('BACK BUTTON CLICKED');
 
-                        if (context.canPop()) {
-                          context.pop();
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
                         } else {
-                          Navigator.of(context).maybePop();
+                          Get.offAllNamed('/home');
                         }
                       },
                     ),

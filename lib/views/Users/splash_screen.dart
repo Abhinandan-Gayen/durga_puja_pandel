@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/ui/bottom_naigation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,9 +22,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const AppShell()),
+    Get.off(
+      () => const AppShell(),
+      transition: Transition.rightToLeftWithFade,
+      duration: const Duration(milliseconds: 980),
     );
   }
 
@@ -66,8 +68,8 @@ class _SplashScreenState extends State<SplashScreen> {
                     height: 30,
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
-                      color: Color(0xFFB91419),
-                      backgroundColor: Color(0x26B91419),
+                      color: Color(0xFFE50914),
+                      backgroundColor: Color(0x26E50914),
                     ),
                   ),
                 ),

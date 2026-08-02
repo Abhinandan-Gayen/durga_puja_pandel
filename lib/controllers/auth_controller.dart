@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,265 +11,421 @@ import '../models/user_model.dart';
 
 class AuthController extends ChangeNotifier {
   AuthController(this._authService, this._firestoreService) {
-    _init();
+    _initialize();
   }
 
   final FirebaseAuthService _authService;
   final FirestoreService _firestoreService;
 
+  static const String _adminLoginKey = 'is_admin_logged_in';
+  static const String _adminEmailKey = 'admin_email';
+
   StreamSubscription<User?>? _authSubscription;
   StreamSubscription<UserModel?>? _userSubscription;
 
-  bool hasSeenOnboarding = false;
-
   User? firebaseUser;
   UserModel? currentUserModel;
+
   bool isLoading = false;
+  bool isInitialized = false;
+  bool isAdminLoggedIn = false;
+  bool hasSeenOnboarding = false;
+
+  String? savedAdminEmail;
   String? errorMessage;
 
-  Future<void>? _pendingFetch;
-  bool _initialized = false;
   bool _disposed = false;
 
   UserModel? get user => currentUserModel;
 
-  bool get isLoggedIn => firebaseUser != null;
-
-  bool get isAdmin => currentUserModel?.role == 'admin';
-
-  bool get isInitialized => _initialized;
-
-  void _init() {
-    firebaseUser = _authService.currentUser;
-    _loadOnboardingStatus();
-    _authSubscription = _authService.authStateChanges.listen(_onAuthChanged);
+  bool get isLoggedIn {
+    return firebaseUser != null && isAdminLoggedIn;
   }
 
-  Future<void> _onAuthChanged(User? nextUser) async {
-    final uid = nextUser?.uid;
-    final previousUid = firebaseUser?.uid;
-    final sameUser = uid != null && uid == previousUid;
-    final hasData = currentUserModel != null;
+  bool get isAdmin {
+    return currentUserModel?.role.toLowerCase() == 'admin';
+  }
 
-    firebaseUser = nextUser;
+  Future<void> _initialize() async {
+    try {
+      await _loadOnboardingStatus();
+      await _loadAdminSession();
 
-    if (sameUser && hasData) {
-      if (!_initialized) {
-        _initialized = true;
-        if (!_disposed) notifyListeners();
+      firebaseUser = _authService.currentUser;
+
+      _authSubscription = _authService.authStateChanges.listen(
+        _onAuthStateChanged,
+      );
+
+      if (isAdminLoggedIn && firebaseUser != null) {
+        await fetchCurrentUserData();
+        _watchCurrentUserData(firebaseUser!.uid);
+      } else if (firebaseUser == null) {
+        isAdminLoggedIn = false;
+        savedAdminEmail = null;
+        await _clearSavedAdminSession();
       }
-      return;
+    } catch (error) {
+      debugPrint('Auth initialization error: $error');
+    } finally {
+      isInitialized = true;
+      _safeNotifyListeners();
     }
-
-    _userSubscription?.cancel();
-    _userSubscription = null;
-    currentUserModel = null;
-    _pendingFetch = null;
-
-    if (nextUser != null) {
-      try {
-        await fetchCurrentUserData().timeout(
-          const Duration(seconds: 10),
-        );
-        _watchCurrentUserData(nextUser.uid);
-      } catch (_) {}
-    }
-
-    _initialized = true;
-    if (!_disposed) notifyListeners();
   }
 
-  Future<void> fetchCurrentUserData() async {
-    if (_pendingFetch != null) return _pendingFetch!;
+  Future<void> _onAuthStateChanged(User? user) async {
+    firebaseUser = user;
 
-    final user = _authService.currentUser;
+    await _userSubscription?.cancel();
+    _userSubscription = null;
+
     if (user == null) {
       currentUserModel = null;
-      if (!_disposed) notifyListeners();
+
+      if (isAdminLoggedIn) {
+        isAdminLoggedIn = false;
+        savedAdminEmail = null;
+        await _clearSavedAdminSession();
+      }
+
+      _safeNotifyListeners();
       return;
     }
 
-    firebaseUser = user;
-    _pendingFetch = _doFetch(user.uid);
-    try {
-      await _pendingFetch;
-    } finally {
-      _pendingFetch = null;
-    }
-  }
-
-  Future<void> _doFetch(String uid) async {
-    isLoading = true;
-    errorMessage = null;
-    if (!_disposed) notifyListeners();
-    try {
-      currentUserModel = await _firestoreService.fetchUser(uid);
-      debugPrint('Current user loaded: ${currentUserModel?.email}, '
-          'role: ${currentUserModel?.role}');
-    } catch (error) {
-      errorMessage = error.toString();
-      debugPrint('Failed to load user data: $error');
-    } finally {
-      isLoading = false;
-      if (!_disposed) notifyListeners();
-    }
-  }
-
-  Future<void> signup({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    isLoading = true;
-    errorMessage = null;
-    if (!_disposed) notifyListeners();
-    try {
-      final credential = await _authService.signUpWithEmailPassword(
-        email: email,
-        password: password,
-      );
-      final fbUser = credential.user;
-      if (fbUser == null) {
-        errorMessage = 'Signup succeeded but no user returned.';
-        return;
-      }
-      await _firestoreService.createUserProfile(
-        UserModel(uid: fbUser.uid, name: name, email: email, role: 'user'),
-      );
-      firebaseUser = fbUser;
+    if (isAdminLoggedIn) {
       await fetchCurrentUserData();
-      _watchCurrentUserData(fbUser.uid);
-    } on FirebaseAuthException catch (error) {
-      errorMessage = error.message ?? error.code;
-    } catch (error) {
-      errorMessage = error.toString();
-    } finally {
-      isLoading = false;
-      if (!_disposed) notifyListeners();
+      _watchCurrentUserData(user.uid);
     }
+
+    _safeNotifyListeners();
   }
 
   Future<void> login(String email, String password) async {
+    if (isLoading) return;
+
     isLoading = true;
     errorMessage = null;
-    if (!_disposed) notifyListeners();
+    _safeNotifyListeners();
+
     try {
-      final credential = await _authService.loginWithEmailPassword(
-        email: email,
-        password: password,
-      );
-      final fbUser = credential.user;
-      if (fbUser == null) {
-        errorMessage = 'Login succeeded but no user returned.';
+      final String enteredEmail = email.trim().toLowerCase();
+      final String enteredPassword = password.trim();
+
+      if (enteredEmail.isEmpty || enteredPassword.isEmpty) {
+        errorMessage = 'Email এবং password লিখুন।';
         return;
       }
-      firebaseUser = fbUser;
-      await fetchCurrentUserData();
-      _watchCurrentUserData(fbUser.uid);
+
+      /*
+       * Firestore structure:
+       *
+       * admin
+       *   └── randomDocumentId
+       *        ├── gmail: "abhinandan@gmail.com"
+       *        ├── password: "123456"
+       *        └── name: "Admin"
+       */
+
+      final QuerySnapshot<Map<String, dynamic>> querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('admin')
+              .where('gmail', isEqualTo: enteredEmail)
+              .limit(1)
+              .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        errorMessage = 'Gmail অথবা password ভুল।';
+        return;
+      }
+
+      final QueryDocumentSnapshot<Map<String, dynamic>> adminDocument =
+          querySnapshot.docs.first;
+
+      final Map<String, dynamic> adminData = adminDocument.data();
+
+      final String firestorePassword =
+          adminData['password']?.toString().trim() ?? '';
+
+      if (firestorePassword.isEmpty || firestorePassword != enteredPassword) {
+        errorMessage = 'Gmail অথবা password ভুল।';
+        return;
+      }
+
+      User? authenticatedUser = FirebaseAuth.instance.currentUser;
+
+      /*
+       * আগে অন্য anonymous account login থাকলে সেটি ব্যবহার হবে।
+       * কোনো account login না থাকলে anonymous sign-in হবে।
+       */
+      if (authenticatedUser == null) {
+        final UserCredential credential = await FirebaseAuth.instance
+            .signInAnonymously();
+
+        authenticatedUser = credential.user;
+      }
+
+      if (authenticatedUser == null) {
+        errorMessage = 'Firebase authentication failed.';
+        return;
+      }
+
+      final String adminName =
+          adminData['name']?.toString().trim().isNotEmpty == true
+          ? adminData['name'].toString().trim()
+          : 'Admin';
+
+      final UserModel adminUserModel = UserModel(
+        uid: authenticatedUser.uid,
+        name: adminName,
+        email: enteredEmail,
+        role: 'admin',
+      );
+
+      /*
+       * users collection-এ admin profile তৈরি অথবা update করবে।
+       */
+      await _firestoreService.createUserProfile(adminUserModel);
+
+      firebaseUser = authenticatedUser;
+      currentUserModel = adminUserModel;
+      isAdminLoggedIn = true;
+      savedAdminEmail = enteredEmail;
+
+      await _saveAdminSession(email: enteredEmail);
+
+      _watchCurrentUserData(authenticatedUser.uid);
+
+      debugPrint('Admin login successful');
+      debugPrint('Admin email: $enteredEmail');
+      debugPrint('Admin UID: ${authenticatedUser.uid}');
     } on FirebaseAuthException catch (error) {
-      errorMessage = error.message ?? error.code;
-    } catch (error) {
-      errorMessage = error.toString();
+      debugPrint('FirebaseAuthException: ${error.code}');
+
+      if (error.code == 'operation-not-allowed') {
+        errorMessage = 'Firebase Console থেকে Anonymous Sign-In enable করুন।';
+      } else if (error.code == 'network-request-failed') {
+        errorMessage = 'Internet connection check করুন।';
+      } else {
+        errorMessage = error.message ?? 'Firebase authentication failed.';
+      }
+    } on FirebaseException catch (error) {
+      debugPrint('FirebaseException: ${error.code}');
+
+      if (error.code == 'permission-denied') {
+        errorMessage =
+            'Firestore permission denied. Firestore Rules check করুন।';
+      } else if (error.code == 'unavailable') {
+        errorMessage = 'Firebase server এখন unavailable।';
+      } else {
+        errorMessage = error.message ?? 'Firebase database error.';
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Admin login error: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
+      errorMessage = 'Login failed. আবার চেষ্টা করুন।';
     } finally {
       isLoading = false;
-      if (!_disposed) notifyListeners();
+      _safeNotifyListeners();
     }
-  }
-
-  Future<void> logout() async {
-    await _authService.logout();
-    firebaseUser = null;
-    currentUserModel = null;
-    _pendingFetch = null;
-    _userSubscription?.cancel();
-    _userSubscription = null;
-    hasSeenOnboarding = false;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('has_seen_onboarding');
-    } catch (e) {
-      debugPrint('Error resetting onboarding status: $e');
-    }
-    if (!_disposed) notifyListeners();
   }
 
   Future<void> resetPassword(String email) async {
     isLoading = true;
     errorMessage = null;
-    if (!_disposed) notifyListeners();
+    _safeNotifyListeners();
     try {
-      await _authService.resetPassword(email);
+      await _authService.sendPasswordResetEmail(email);
+    } catch (e) {
+      errorMessage = e.toString();
+    } finally {
+      isLoading = false;
+      _safeNotifyListeners();
+    }
+  }
+
+  Future<void> fetchCurrentUserData() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      firebaseUser = null;
+      currentUserModel = null;
+      return;
+    }
+
+    try {
+      firebaseUser = user;
+
+      final UserModel? profile = await _firestoreService.fetchUser(user.uid);
+
+      if (profile != null) {
+        currentUserModel = profile;
+      } else if (isAdminLoggedIn && savedAdminEmail != null) {
+        /*
+         * users document না পাওয়া গেলে saved admin profile তৈরি করবে।
+         */
+        final UserModel adminProfile = UserModel(
+          uid: user.uid,
+          name: 'Admin',
+          email: savedAdminEmail!,
+          role: 'admin',
+        );
+
+        await _firestoreService.createUserProfile(adminProfile);
+        currentUserModel = adminProfile;
+      }
+
+      debugPrint(
+        'Current user: ${currentUserModel?.email}, '
+        'role: ${currentUserModel?.role}',
+      );
+    } catch (error) {
+      debugPrint('Current user fetch error: $error');
+      errorMessage = 'User profile load করা যায়নি।';
+    }
+
+    _safeNotifyListeners();
+  }
+
+  void _watchCurrentUserData(String uid) {
+    _userSubscription?.cancel();
+
+    _userSubscription = _firestoreService
+        .watchUser(uid)
+        .listen(
+          (UserModel? profile) {
+            if (profile != null) {
+              currentUserModel = profile;
+              _safeNotifyListeners();
+            }
+          },
+          onError: (Object error) {
+            debugPrint('User profile listener error: $error');
+          },
+        );
+  }
+
+  Future<void> logout() async {
+    if (isLoading) return;
+
+    isLoading = true;
+    errorMessage = null;
+    _safeNotifyListeners();
+
+    try {
+      await _userSubscription?.cancel();
+      _userSubscription = null;
+
+      await _authService.logout();
+      await _clearSavedAdminSession();
+
+      firebaseUser = null;
+      currentUserModel = null;
+      isAdminLoggedIn = false;
+      savedAdminEmail = null;
+
+      debugPrint('Admin logout successful');
     } on FirebaseAuthException catch (error) {
       errorMessage = error.message ?? error.code;
     } catch (error) {
-      errorMessage = error.toString();
+      debugPrint('Logout error: $error');
+      errorMessage = 'Logout করা যায়নি।';
     } finally {
       isLoading = false;
-      if (!_disposed) notifyListeners();
+      _safeNotifyListeners();
+    }
+  }
+
+  Future<void> _saveAdminSession({required String email}) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    await preferences.setBool(_adminLoginKey, true);
+
+    await preferences.setString(_adminEmailKey, email);
+  }
+
+  Future<void> _loadAdminSession() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      isAdminLoggedIn = preferences.getBool(_adminLoginKey) ?? false;
+
+      savedAdminEmail = preferences.getString(_adminEmailKey);
+
+      debugPrint('Saved admin login: $isAdminLoggedIn');
+      debugPrint('Saved admin email: $savedAdminEmail');
+    } catch (error) {
+      debugPrint('Admin session load error: $error');
+
+      isAdminLoggedIn = false;
+      savedAdminEmail = null;
+    }
+  }
+
+  Future<void> _clearSavedAdminSession() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    await preferences.remove(_adminLoginKey);
+    await preferences.remove(_adminEmailKey);
+  }
+
+  Future<void> _loadOnboardingStatus() async {
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      hasSeenOnboarding = preferences.getBool('has_seen_onboarding') ?? false;
+    } catch (error) {
+      debugPrint('Onboarding status load error: $error');
+      hasSeenOnboarding = false;
+    }
+  }
+
+  Future<void> completeOnboarding() async {
+    hasSeenOnboarding = true;
+    _safeNotifyListeners();
+
+    try {
+      final SharedPreferences preferences =
+          await SharedPreferences.getInstance();
+
+      await preferences.setBool('has_seen_onboarding', true);
+    } catch (error) {
+      debugPrint('Onboarding save error: $error');
     }
   }
 
   bool checkUserRole(String role) {
-    return currentUserModel?.role == role;
-  }
-
-  Future<void> signUp({
-    required String name,
-    required String email,
-    required String password,
-  }) {
-    return signup(name: name, email: email, password: password);
+    return currentUserModel?.role.toLowerCase() == role.toLowerCase();
   }
 
   Future<void> signIn(String email, String password) {
     return login(email, password);
   }
 
-  Future<void> signOut() => logout();
-
-  Future<void> sendPasswordReset(String email) => resetPassword(email);
-
-  void _watchCurrentUserData(String uid) {
-    _userSubscription?.cancel();
-    _userSubscription = _firestoreService.watchUser(uid).listen(
-      (profile) {
-        currentUserModel = profile;
-        if (!_disposed) notifyListeners();
-      },
-      onError: (Object error) {
-        errorMessage = error.toString();
-        if (!_disposed) notifyListeners();
-      },
-    );
+  Future<void> signOut() {
+    return logout();
   }
 
-  Future<void> _loadOnboardingStatus() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-      if (!_disposed) notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading onboarding status: $e');
-    }
+  void clearError() {
+    errorMessage = null;
+    _safeNotifyListeners();
   }
 
-  Future<void> completeOnboarding() async {
-    hasSeenOnboarding = true;
-    if (!_disposed) notifyListeners();
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('has_seen_onboarding', true);
-    } catch (e) {
-      debugPrint('Error saving onboarding status: $e');
+  void _safeNotifyListeners() {
+    if (!_disposed) {
+      notifyListeners();
     }
   }
 
   @override
   void dispose() {
     _disposed = true;
+
     _authSubscription?.cancel();
     _userSubscription?.cancel();
-    _pendingFetch = null;
+
     super.dispose();
   }
 }

@@ -1,11 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/map_controller.dart';
 import '../../models/pandal_model.dart';
-import '../../routes/route_names.dart';
 import 'crowd_level_chip.dart';
 import 'rating_widget.dart';
 
@@ -92,10 +91,7 @@ class MapPandalBottomSheet extends StatelessWidget {
                     label: const Text('View Details'),
                     onPressed: () {
                       Navigator.of(context).pop();
-                      context.pushNamed(
-                        RouteNames.pandalDetail,
-                        pathParameters: {'id': pandal.id},
-                      );
+                      Get.toNamed('/pandal/${pandal.id}');
                     },
                   ),
                 ),

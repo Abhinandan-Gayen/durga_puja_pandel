@@ -4,7 +4,7 @@ import 'package:durga_puja_pandel/views/Users/favoutiry.dart';
 import 'package:durga_puja_pandel/views/Users/map.dart';
 import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 class AppShell extends StatefulWidget {
@@ -41,9 +41,7 @@ class _AppShellState extends State<AppShell> {
       key: _scaffoldKey,
       extendBody: true,
       drawer: _buildDrawer(shellController),
-      backgroundColor: index == 0
-          ? const Color(0xFFE50914)
-          : (index == 2 ? const Color(0xFFB91419) : const Color(0xFFFFF8E9)),
+      backgroundColor: const Color(0xFFE50914),
       body: SafeArea(
         top: index != 0,
         bottom: false,
@@ -59,7 +57,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _buildDrawer(AppShellController shellController) {
-    const Color primaryRed = Color(0xFFB91419);
+    const Color primaryRed = Color(0xFFE50914);
     const Color cream = Color(0xFFFFF8E9);
     final double drawerWidth = (MediaQuery.sizeOf(context).width * 0.80).clamp(
       280.0,
@@ -186,7 +184,7 @@ class _AppShellState extends State<AppShell> {
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
-                  context.go('/admin');
+                  Get.toNamed('/login');
                 },
               ),
             ),
