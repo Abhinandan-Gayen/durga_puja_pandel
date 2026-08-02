@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_constants.dart';
-import '../../routes/route_names.dart';
 import '../widgets/custom_button.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -43,15 +42,13 @@ class OnboardingScreen extends StatelessWidget {
                 icon: Icons.explore,
                 onPressed: () async {
                   await context.read<AuthController>().completeOnboarding();
-                  if (context.mounted) {
-                    context.goNamed(RouteNames.home);
-                  }
+                  Get.offAllNamed('/home');
                 },
               ),
               const SizedBox(height: 8),
               OutlinedButton(
                
-                onPressed: () => context.pushNamed(RouteNames.login),
+                onPressed: () => Get.toNamed('/login'),
                 child: const Text('Only admin Login'),
               ),
             ],

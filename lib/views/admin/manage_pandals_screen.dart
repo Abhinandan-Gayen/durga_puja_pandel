@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/admin_pandal_controller.dart';
 import '../../models/pandal_model.dart';
-import '../../routes/route_names.dart';
 import '../widgets/empty_widget.dart';
 import '../widgets/loading_widget.dart';
 
@@ -42,7 +41,7 @@ class _ManagePandalsScreenState extends State<ManagePandalsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Manage pandals')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.pushNamed(RouteNames.addPandal),
+        onPressed: () => Get.toNamed('/admin/add-pandal'),
         child: const Icon(Icons.add),
       ),
       body: Consumer<AdminPandalController>(
@@ -132,9 +131,8 @@ class _AdminPandalTile extends StatelessWidget {
                 children: [
                   IconButton(
                     tooltip: 'Edit',
-                    onPressed: () => context.pushNamed(
-                      RouteNames.editPandal,
-                      pathParameters: {'id': pandal.id},
+                    onPressed: () => Get.toNamed(
+                      '/admin/edit-pandal/${pandal.id}',
                     ),
                     icon: const Icon(Icons.edit_outlined),
                   ),

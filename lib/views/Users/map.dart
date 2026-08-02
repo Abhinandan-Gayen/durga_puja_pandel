@@ -144,7 +144,7 @@ class _CardScreenState extends State<CardScreen> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFFB91419),
+        statusBarColor: Color(0xFFE50914),
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
@@ -181,7 +181,7 @@ class _CardScreenState extends State<CardScreen> {
                 height: 58,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFB91419),
+                  color: Color(0xFFE50914),
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x26000000),
@@ -305,7 +305,7 @@ class _CardScreenState extends State<CardScreen> {
                         height: 7,
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFFB91419)
+                              ? const Color(0xFFE50914)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: const [
@@ -381,7 +381,7 @@ class MapPandalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryRed = Color(0xFFB91419);
+    const Color primaryRed = Color(0xFFE50914);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -699,7 +699,7 @@ class MapMarker extends StatelessWidget {
         children: [
           Icon(
             Icons.location_on,
-            color: Color(0xFFB91419),
+            color: Color(0xFFE50914),
             size: 46,
             shadows: [
               Shadow(

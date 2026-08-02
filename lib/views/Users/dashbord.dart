@@ -11,7 +11,7 @@ class DurgaPujaHomeScreen extends StatefulWidget {
 }
 
 class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
-  static const Color primaryRed = Color(0xFFB91419);
+  static const Color primaryRed = Color(0xFFE50914);
   static const Color darkRed = Color(0xFF8C1115);
   static const Color creamColor = Color(0xFFFFF8E9);
 

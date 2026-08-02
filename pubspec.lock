@@ -400,14 +400,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.5"
-  go_router:
+  get:
     dependency: "direct main"
     description:
-      name: go_router
-      sha256: "5922b2861e2235a3504896f0d6fa07d84141b480cf52eecd2f42cd25585a9e8a"
+      name: get
+      sha256: "5ed34a7925b85336e15d472cc4cfe7d9ebf4ab8e8b9f688585bf6b50f4c3d79a"
       url: "https://pub.dev"
     source: hosted
-    version: "17.3.0"
+    version: "4.7.3"
   google_maps:
     dependency: transitive
     description:

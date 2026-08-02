@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/admin_pandal_controller.dart';
@@ -239,9 +238,9 @@ class _PandalFormScreenState extends State<PandalFormScreen>
 
       Position? position;
       try {
-        position = await locationService
-            .getCurrentPosition()
-            .timeout(const Duration(seconds: 15));
+        position = await locationService.getCurrentPosition().timeout(
+          const Duration(seconds: 15),
+        );
       } catch (_) {
         if (mounted) {
           SnackbarHelper.showError(
@@ -255,11 +254,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
 
       List<Placemark> placemarks;
       try {
-        placemarks =
-            await placemarkFromCoordinates(
-              position.latitude,
-              position.longitude,
-            );
+        placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
       } catch (_) {
         placemarks = [];
       }
@@ -312,10 +310,8 @@ class _PandalFormScreenState extends State<PandalFormScreen>
 
     final result = await Navigator.of(context).push<LocationPickerResult>(
       MaterialPageRoute(
-        builder: (_) => LocationPickerScreen(
-          initialLatitude: lat,
-          initialLongitude: lng,
-        ),
+        builder: (_) =>
+            LocationPickerScreen(initialLatitude: lat, initialLongitude: lng),
       ),
     );
     if (result == null || !mounted) return;
@@ -405,7 +401,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       return;
     }
     SnackbarHelper.showSuccess(context, 'Pandal saved');
-    context.pop();
+    Navigator.of(context).pop();
   }
 
   List<String> _linesFromController(TextEditingController controller) {
@@ -451,17 +447,18 @@ class _PandalFormScreenState extends State<PandalFormScreen>
         decoration: BoxDecoration(
           color: AppColors.deepRed.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.deepRed.withValues(alpha: 0.18),
-          ),
+          border: Border.all(color: AppColors.deepRed.withValues(alpha: 0.18)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 18, color: AppColors.deepRed),
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 18,
+                  color: AppColors.deepRed,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -497,8 +494,11 @@ class _PandalFormScreenState extends State<PandalFormScreen>
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.pin_drop_outlined,
-                    size: 16, color: AppColors.deepRed),
+                const Icon(
+                  Icons.pin_drop_outlined,
+                  size: 16,
+                  color: AppColors.deepRed,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '${preview.latitude.toStringAsFixed(6)}, ${preview.longitude.toStringAsFixed(6)}',
@@ -867,8 +867,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                   _videoUrlsController,
                                   'Video URLs',
                                   Icons.videocam_rounded,
-                                  hint:
-                                      'Enter one public video URL per line',
+                                  hint: 'Enter one public video URL per line',
                                   minLines: 3,
                                   maxLines: 5,
                                   validator: (v) {
@@ -1538,18 +1537,24 @@ class _MultilineField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide:
-                    const BorderSide(color: AppColors.deepRed, width: 1.8),
+                borderSide: const BorderSide(
+                  color: AppColors.deepRed,
+                  width: 1.8,
+                ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide:
-                    const BorderSide(color: AppColors.danger, width: 1.2),
+                borderSide: const BorderSide(
+                  color: AppColors.danger,
+                  width: 1.2,
+                ),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide:
-                    const BorderSide(color: AppColors.danger, width: 1.8),
+                borderSide: const BorderSide(
+                  color: AppColors.danger,
+                  width: 1.8,
+                ),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -1592,8 +1597,8 @@ class _SaveButton extends StatelessWidget {
             colors: isLoading
                 ? [Colors.grey.shade400, Colors.grey.shade500]
                 : isDark
-                    ? [const Color(0xFF7B2FF7), const Color(0xFF4A00E0)]
-                    : [AppColors.deepRed, AppColors.vermilion],
+                ? [const Color(0xFF7B2FF7), const Color(0xFF4A00E0)]
+                : [AppColors.deepRed, AppColors.vermilion],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: isLoading

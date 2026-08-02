@@ -1,6 +1,6 @@
 import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'controllers/admin_pandal_controller.dart';
 import 'controllers/auth_controller.dart';
@@ -52,13 +52,31 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
   final mapService = MapService();
 
   late final AuthController authController;
-  late final GoRouter router;
 
   @override
   void initState() {
     super.initState();
     authController = AuthController(authService, firestoreService);
-    router = AppRoutes.createRouter(authController);
+    
+    // Setup listener to monitor auth state change and redirect using GetX
+    authController.addListener(() {
+      final route = Get.currentRoute;
+      final isAdminPath = route.startsWith('/admin');
+      final isAuthPath = {
+        '/login',
+        '/signup',
+        '/forgot-password',
+      }.contains(route);
+
+      if (isAdminPath && !authController.isLoggedIn) {
+        Get.offAllNamed('/login');
+      } else if (isAdminPath && !authController.isAdmin) {
+        Get.offAllNamed('/home');
+      } else if (isAuthPath && authController.isLoggedIn) {
+        Get.offAllNamed(authController.isAdmin ? '/admin' : '/home');
+      }
+    });
+
     _themeController = ThemeController();
     _themeController.load();
   }
@@ -104,13 +122,14 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {
-          return MaterialApp.router(
+          return GetMaterialApp(
             title: 'Pujo Pandal Guide',
             debugShowCheckedModeBanner: false,
+            initialRoute: '/',
+            getPages: AppRoutes.pages,
             // theme: AppTheme.lightTheme,
             // darkTheme: AppTheme.darkTheme,
             // themeMode: themeController.themeMode,
-            routerConfig: router,
 
             // theme: ThemeData(
             //   brightness: Brightness.dark,

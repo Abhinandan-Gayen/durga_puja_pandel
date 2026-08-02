@@ -1,10 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/pandal_model.dart';
-import '../../routes/route_names.dart';
 import 'crowd_level_chip.dart';
 import 'rating_widget.dart';
 
@@ -63,10 +62,7 @@ class _PandalCardState extends State<PandalCard>
         child: Card(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => context.pushNamed(
-              RouteNames.pandalDetail,
-              pathParameters: {'id': widget.pandal.id},
-            ),
+            onTap: () => Get.toNamed('/pandal/${widget.pandal.id}'),
             child: widget.compact
                 ? _CompactContent(
                     pandal: widget.pandal,

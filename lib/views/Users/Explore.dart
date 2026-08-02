@@ -2,6 +2,7 @@ import 'package:durga_puja_pandel/core/theme/normal_color.dart';
 import 'package:durga_puja_pandel/core/utils/globa_data.dart';
 import 'package:durga_puja_pandel/views/widgets/pandel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key, required this.saved, required this.onSaved});
@@ -25,14 +26,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
         )
         .toList();
     return Scaffold(
-      backgroundColor: Color(0xFFFFF8E9),
+      backgroundColor: const Color(0xFFFFF8E9),
       appBar: AppBar(
-        backgroundColor: Color(0xFFFFF8E9),
-        surfaceTintColor: Color(0xFFFFF8E9),
+        backgroundColor: const Color(0xFFE50914),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.15),
         centerTitle: true,
-        title: Text(
+        title: const Text(
           'Explore Pandals',
-          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Color(0xFFE50914),
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+          systemNavigationBarColor: Colors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
         ),
       ),
       body: ListView(
