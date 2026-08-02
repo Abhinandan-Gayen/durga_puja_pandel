@@ -117,7 +117,11 @@ class PandalTile extends StatelessWidget {
                         backgroundColor: const Color(0xFFB91419),
                       ),
                       onPressed: () {},
-                      icon: const Icon(Icons.navigation_outlined),
+                      icon: const Image(
+                        image: AssetImage("assets/Send_light@4x.png"),
+                        color: Colors.white,
+                        height: 30,
+                      ),
                       label: const Text('Navigate'),
                     ),
                   ),
