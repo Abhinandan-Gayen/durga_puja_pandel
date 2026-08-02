@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
 import '../../core/services/location_service.dart';
+import '../../core/utils/distance_helper.dart';
 import '../../models/pandal_model.dart';
 import '../admin/location_picker_screen.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
@@ -30,6 +31,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   bool _isLoadingLocation = false;
   double _currentLatitude = 22.5726;
   double _currentLongitude = 88.3639;
+  bool _hasSelectedLocation = false;
 
   final List<Map<String, dynamic>> categories = [
     {'icon': Icons.temple_hindu_outlined, 'title': 'Top\nPandals'},
@@ -84,6 +86,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       setState(() {
         _currentLatitude = position.latitude;
         _currentLongitude = position.longitude;
+        _hasSelectedLocation = true;
         _currentLocationLabel = parts.isEmpty
             ? '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}'
             : parts.join(', ');
@@ -161,6 +164,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
     setState(() {
       _currentLatitude = result.latitude;
       _currentLongitude = result.longitude;
+      _hasSelectedLocation = true;
       _currentLocationLabel = result.area?.trim().isNotEmpty == true
           ? result.area!.trim()
           : result.city?.trim().isNotEmpty == true
@@ -665,6 +669,15 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             : pandal.images.isNotEmpty
             ? pandal.images.first
             : '';
+        final distanceKm = DistanceHelper.calculateDistanceInKm(
+          _currentLatitude,
+          _currentLongitude,
+          pandal.latitude,
+          pandal.longitude,
+        );
+        final distanceText = distanceKm < 1
+            ? '${(distanceKm * 1000).round()} m away'
+            : '${distanceKm.toStringAsFixed(1)} km away';
 
         return Opacity(
           opacity: pandal.isActive ? 1 : 0.42,
@@ -904,6 +917,32 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                   letterSpacing: 0.1,
                                 ),
                               ),
+
+                              if (_hasSelectedLocation) ...[
+                                const SizedBox(height: 7),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.near_me_rounded,
+                                      color: Color(0xFFFFD2C1),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        distanceText,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFFFFD2C1),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
 
                               const Spacer(),
 
