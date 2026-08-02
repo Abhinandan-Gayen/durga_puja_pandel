@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
+import '../../core/services/location_service.dart';
 import '../../models/pandal_model.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'location_pandals_screen.dart';
@@ -23,7 +25,8 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   static const Color creamColor = Color(0xFFFFF8E9);
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _selectedArea;
+  String _currentLocationLabel = 'Detecting location...';
+  bool _isLoadingLocation = false;
 
   final List<Map<String, dynamic>> categories = [
     {'icon': Icons.temple_hindu_outlined, 'title': 'Top\nPandals'},
@@ -50,6 +53,43 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       'time': '7:00 AM Onwards',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentLocation();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    if (_isLoadingLocation) return;
+    setState(() {
+      _isLoadingLocation = true;
+      _currentLocationLabel = 'Detecting location...';
+    });
+    try {
+      final position = await LocationService().getCurrentPosition();
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      final place = placemarks.isEmpty ? null : placemarks.first;
+      final parts = <String>[
+        if (place?.subLocality?.trim().isNotEmpty == true) place!.subLocality!,
+        if (place?.locality?.trim().isNotEmpty == true) place!.locality!,
+      ].map((part) => part.trim()).toSet().toList();
+      if (!mounted) return;
+      setState(() {
+        _currentLocationLabel = parts.isEmpty
+            ? '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}'
+            : parts.join(', ');
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _currentLocationLabel = 'Tap to get location');
+    } finally {
+      if (mounted) setState(() => _isLoadingLocation = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -220,54 +260,9 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   }
 
   Widget _buildLocationButton() {
-    final firebasePandals = context.watch<PandalController>().pandals;
-    final areaByKey = <String, String>{};
-    for (final pandal in firebasePandals) {
-      final area = pandal.area.trim();
-      if (area.isNotEmpty) {
-        areaByKey.putIfAbsent(area.toLowerCase(), () => area);
-      }
-    }
-    final areas = areaByKey.values.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-    return PopupMenuButton<String>(
-      tooltip: 'Select location',
-      position: PopupMenuPosition.under,
-      offset: const Offset(0, 8),
-      color: const Color(0xFFFFFAF2),
-      elevation: 14,
-      shadowColor: Colors.black.withValues(alpha: 0.22),
-      constraints: const BoxConstraints(minWidth: 230, maxWidth: 290),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFFE9D8C6), width: 1),
-      ),
-      onSelected: (area) {
-        setState(() => _selectedArea = area == '__all__' ? null : area);
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          value: '__all__',
-          height: 52,
-          child: _LocationMenuItem(
-            label: 'All Locations',
-            icon: Icons.public_rounded,
-            isSelected: _selectedArea == null,
-          ),
-        ),
-        ...areas.map(
-          (area) => PopupMenuItem<String>(
-            value: area,
-            height: 52,
-            child: _LocationMenuItem(
-              label: area,
-              icon: Icons.location_on_rounded,
-              isSelected: _selectedArea == area,
-            ),
-          ),
-        ),
-      ],
+    return InkWell(
+      onTap: _loadCurrentLocation,
+      borderRadius: BorderRadius.circular(30),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -288,7 +283,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             const Icon(Icons.location_on, color: primaryRed, size: 20),
             const SizedBox(width: 6),
             Text(
-              _selectedArea ?? 'All Locations',
+              _currentLocationLabel,
               style: const TextStyle(
                 color: Color(0xFF443C38),
                 fontSize: 13, // সাইজ স্ট্যান্ডার্ড করা হয়েছে
@@ -296,11 +291,20 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF574E49),
-              size: 20,
-            ),
+            if (_isLoadingLocation)
+              const SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: primaryRed,
+                ),
+              )
+            else
+              const Icon(
+                Icons.my_location_rounded,
+                color: Color(0xFF574E49),
+                size: 18,
+              ),
           ],
         ),
       ),
@@ -370,26 +374,13 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   Widget _buildMainContent() {
     final pandalController = context.watch<PandalController>();
     final query = _searchQuery.trim().toLowerCase();
-    final filteredPandals = pandalController.pandals.where((pandal) {
-      final matchesLocation =
-          _selectedArea == null ||
-          pandal.area.toLowerCase() == _selectedArea!.toLowerCase();
-      if (!matchesLocation) return false;
-      if (query.isEmpty) {
-        return _selectedArea == null ? pandal.isFeatured : true;
-      }
+    final displayedPandals = pandalController.pandals.where((pandal) {
+      if (query.isEmpty) return pandal.isFeatured;
       return pandal.name.toLowerCase().contains(query) ||
           pandal.area.toLowerCase().contains(query) ||
           pandal.city.toLowerCase().contains(query) ||
           pandal.address.toLowerCase().contains(query) ||
           pandal.description.toLowerCase().contains(query);
-    });
-    final seenPandals = <String>{};
-    final displayedPandals = filteredPandals.where((pandal) {
-      final key =
-          '${pandal.name.trim().toLowerCase()}|'
-          '${pandal.area.trim().toLowerCase()}';
-      return seenPandals.add(key);
     }).toList();
     return Container(
       width: double.infinity,
@@ -421,15 +412,11 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           // _buildCategories(),
           // const SizedBox(height: 15),
           _buildSectionHeader(
-            title: query.isNotEmpty
-                ? 'Search Results'
-                : _selectedArea == null
-                ? 'Featured Pandals'
-                : '$_selectedArea Pandals',
+            title: query.isNotEmpty ? 'Search Results' : 'Featured Pandals',
             onSeeAll: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => LocationPandalsScreen(area: _selectedArea),
+                  builder: (_) => const LocationPandalsScreen(),
                 ),
               );
             },
