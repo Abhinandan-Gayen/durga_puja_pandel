@@ -16,6 +16,8 @@ class AdminPandalController extends ChangeNotifier {
   String? errorMessage;
   MediaModel? lastUploadedMedia;
   List<PandalModel> adminPandals = [];
+  String? _updatingPandalId;
+  String? _updatingStatusField;
 
   bool _isFetching = false;
 
@@ -27,11 +29,17 @@ class AdminPandalController extends ChangeNotifier {
   int get totalReviews =>
       adminPandals.fold<int>(0, (sum, pandal) => sum + pandal.totalReviews);
 
+  bool isUpdatingActive(String pandalId) =>
+      _updatingPandalId == pandalId && _updatingStatusField == 'isActive';
+
+  bool isUpdatingFeatured(String pandalId) =>
+      _updatingPandalId == pandalId && _updatingStatusField == 'isFeatured';
+
   Future<String?> addPandal(PandalModel pandal) async {
     return _guardRun<String?>(() async {
       final id = await _firestoreService.addDocument(
         collectionPath: FirebaseConstants.pandalsCollection,
-        data: _visibleFormFields(pandal),
+        data: _visibleFormFields(pandal, isCreating: true),
       );
       await _fetchAll();
       return id;
@@ -65,26 +73,51 @@ class AdminPandalController extends ChangeNotifier {
     await _guardRun<void>(() => _fetchAll());
   }
 
-  Future<void> toggleActiveStatus(PandalModel pandal) async {
-    await _guardRun<void>(() async {
-      await _firestoreService.updateDocument(
-        collectionPath: FirebaseConstants.pandalsCollection,
-        documentId: pandal.id,
-        data: {'isActive': !pandal.isActive},
-      );
-      await _fetchAll();
-    });
+  Future<void> toggleActiveStatus(PandalModel pandal, bool isActive) async {
+    _setUpdatingStatus(pandal.id, 'isActive');
+    try {
+      await _guardRun<void>(() async {
+        await _firestoreService.updateDocument(
+          collectionPath: FirebaseConstants.pandalsCollection,
+          documentId: pandal.id,
+          data: {'isActive': isActive},
+        );
+        await _fetchAll();
+      });
+    } finally {
+      _clearUpdatingStatus();
+    }
   }
 
-  Future<void> toggleFeaturedStatus(PandalModel pandal) async {
-    await _guardRun<void>(() async {
-      await _firestoreService.updateDocument(
-        collectionPath: FirebaseConstants.pandalsCollection,
-        documentId: pandal.id,
-        data: {'isFeatured': !pandal.isFeatured},
-      );
-      await _fetchAll();
-    });
+  Future<void> toggleFeaturedStatus(
+    PandalModel pandal,
+    bool isFeatured,
+  ) async {
+    _setUpdatingStatus(pandal.id, 'isFeatured');
+    try {
+      await _guardRun<void>(() async {
+        await _firestoreService.updateDocument(
+          collectionPath: FirebaseConstants.pandalsCollection,
+          documentId: pandal.id,
+          data: {'isFeatured': isFeatured},
+        );
+        await _fetchAll();
+      });
+    } finally {
+      _clearUpdatingStatus();
+    }
+  }
+
+  void _setUpdatingStatus(String pandalId, String field) {
+    _updatingPandalId = pandalId;
+    _updatingStatusField = field;
+    notifyListeners();
+  }
+
+  void _clearUpdatingStatus() {
+    _updatingPandalId = null;
+    _updatingStatusField = null;
+    notifyListeners();
   }
 
   Future<MediaModel?> uploadMedia({
@@ -129,7 +162,10 @@ class AdminPandalController extends ChangeNotifier {
     _isFetching = false;
   }
 
-  Map<String, dynamic> _visibleFormFields(PandalModel pandal) {
+  Map<String, dynamic> _visibleFormFields(
+    PandalModel pandal, {
+    bool isCreating = false,
+  }) {
     return {
       'name': pandal.name,
       'description': pandal.description,
@@ -140,6 +176,8 @@ class AdminPandalController extends ChangeNotifier {
       'thumbnailUrl': pandal.thumbnailUrl,
       'images': pandal.images,
       'videos': pandal.videos,
+      'isActive': isCreating ? true : pandal.isActive,
+      'isFeatured': isCreating ? false : pandal.isFeatured,
     };
   }
 

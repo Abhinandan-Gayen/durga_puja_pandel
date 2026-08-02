@@ -117,6 +117,9 @@ class _AdminPandalTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final admin = context.read<AdminPandalController>();
+    final isUpdatingActive = admin.isUpdatingActive(pandal.id);
+    final isUpdatingFeatured = admin.isUpdatingFeatured(pandal.id);
+    final isUpdatingStatus = isUpdatingActive || isUpdatingFeatured;
 
     return Card(
       child: Padding(
@@ -148,14 +151,28 @@ class _AdminPandalTile extends StatelessWidget {
             SwitchListTile(
               value: pandal.isActive,
               title: Text(pandal.isActive ? 'Active' : 'Inactive'),
-              secondary: const Icon(Icons.power_settings_new),
-              onChanged: (_) => admin.toggleActiveStatus(pandal),
+              secondary: isUpdatingActive
+                  ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.power_settings_new),
+              onChanged: isUpdatingStatus
+                  ? null
+                  : (value) => admin.toggleActiveStatus(pandal, value),
             ),
             SwitchListTile(
               value: pandal.isFeatured,
               title: Text(pandal.isFeatured ? 'Featured' : 'Not featured'),
-              secondary: const Icon(Icons.star_border),
-              onChanged: (_) => admin.toggleFeaturedStatus(pandal),
+              secondary: isUpdatingFeatured
+                  ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.star_border),
+              onChanged: isUpdatingStatus
+                  ? null
+                  : (value) => admin.toggleFeaturedStatus(pandal, value),
             ),
           ],
         ),
