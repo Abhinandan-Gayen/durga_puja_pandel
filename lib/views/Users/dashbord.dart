@@ -230,17 +230,39 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
     return PopupMenuButton<String>(
       tooltip: 'Select location',
-      offset: const Offset(0, 48),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, 8),
+      color: const Color(0xFFFFFAF2),
+      elevation: 14,
+      shadowColor: Colors.black.withValues(alpha: 0.22),
+      constraints: const BoxConstraints(minWidth: 230, maxWidth: 290),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFE9D8C6), width: 1),
+      ),
       onSelected: (area) {
         setState(() => _selectedArea = area == '__all__' ? null : area);
       },
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: '__all__',
-          child: Text('All Locations'),
+          height: 52,
+          child: _LocationMenuItem(
+            label: 'All Locations',
+            icon: Icons.public_rounded,
+            isSelected: _selectedArea == null,
+          ),
         ),
         ...areas.map(
-          (area) => PopupMenuItem<String>(value: area, child: Text(area)),
+          (area) => PopupMenuItem<String>(
+            value: area,
+            height: 52,
+            child: _LocationMenuItem(
+              label: area,
+              icon: Icons.location_on_rounded,
+              isSelected: _selectedArea == area,
+            ),
+          ),
         ),
       ],
       child: Container(
@@ -1018,6 +1040,72 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationMenuItem extends StatelessWidget {
+  const _LocationMenuItem({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? const Color(0xFFE50914).withValues(alpha: 0.09)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color(0xFFE50914)
+                  : const Color(0xFFFFE5D8),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 17,
+              color: isSelected ? Colors.white : const Color(0xFFE50914),
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: const Color(0xFF443C38),
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+          if (isSelected) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Color(0xFFE50914),
+              size: 20,
+            ),
+          ],
         ],
       ),
     );
