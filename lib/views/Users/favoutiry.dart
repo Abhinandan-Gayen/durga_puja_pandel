@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
+import '../../core/services/location_service.dart';
+import '../../core/utils/distance_helper.dart';
 
 class FavouritesScreen extends StatefulWidget {
   const FavouritesScreen({
@@ -23,6 +25,27 @@ class FavouritesScreen extends StatefulWidget {
 
 class _FavouritesScreenState extends State<FavouritesScreen> {
   String _query = '';
+  double? _userLatitude;
+  double? _userLongitude;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserLocation();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final position = await LocationService().getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _userLatitude = position.latitude;
+        _userLongitude = position.longitude;
+      });
+    } catch (_) {
+      // Favourites remain available without location permission.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,11 +162,25 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                   : firebasePandal.images.isNotEmpty
                   ? firebasePandal.images.first
                   : '';
+              final distanceKm = _userLatitude == null ||
+                      _userLongitude == null
+                  ? null
+                  : DistanceHelper.calculateDistanceInKm(
+                      _userLatitude!,
+                      _userLongitude!,
+                      firebasePandal.latitude,
+                      firebasePandal.longitude,
+                    );
+              final distanceText = distanceKm == null
+                  ? ''
+                  : distanceKm < 1
+                  ? '${(distanceKm * 1000).round()} m'
+                  : '${distanceKm.toStringAsFixed(1)} km';
               final tilePandal = Pandal(
                 firebasePandal.name,
                 firebasePandal.name,
                 firebasePandal.area,
-                '',
+                distanceText,
                 firebasePandal.averageRating.toStringAsFixed(1),
                 firebasePandal.crowdLevel,
                 firebasePandal.themeName,
