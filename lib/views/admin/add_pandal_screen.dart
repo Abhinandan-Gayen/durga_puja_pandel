@@ -40,6 +40,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   late final TextEditingController _descriptionController;
   late final TextEditingController _latitudeController;
   late final TextEditingController _longitudeController;
+  late final TextEditingController _otherCityController;
   late final TextEditingController _themeNameController;
   late final TextEditingController _organizerNameController;
   late final TextEditingController _openingTimeController;
@@ -93,9 +94,11 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _galleryUrlsController.addListener(_onMediaChanged);
     _videoUrlsController.addListener(_onMediaChanged);
 
-    _city = AppConstants.supportedCities.contains(pandal.city)
-        ? pandal.city
-        : AppConstants.supportedCities.first;
+    final hasSupportedCity = AppConstants.supportedCities.contains(pandal.city);
+    _city = hasSupportedCity ? pandal.city : 'Others';
+    _otherCityController = TextEditingController(
+      text: hasSupportedCity ? '' : pandal.city,
+    );
     _crowdLevel = AppConstants.crowdLevels.contains(pandal.crowdLevel)
         ? pandal.crowdLevel
         : AppConstants.crowdLevels.first;
@@ -133,6 +136,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _descriptionController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
+    _otherCityController.dispose();
     _themeNameController.dispose();
     _organizerNameController.dispose();
     _openingTimeController.dispose();
@@ -348,7 +352,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     final uid = context.read<AuthController>().firebaseUser?.uid ?? '';
     final pandal = initial.copyWith(
       name: _nameController.text.trim(),
-      city: _city,
+      city: _city == 'Others' ? _otherCityController.text.trim() : _city,
       area: _areaController.text.trim(),
       address: _addressController.text.trim(),
       description: _descriptionController.text.trim(),
@@ -632,6 +636,17 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                   onChanged: (v) =>
                                       setState(() => _city = v ?? _city),
                                 ),
+                                if (_city == 'Others') ...[
+                                  _sep(12),
+                                  _Field(
+                                    _otherCityController,
+                                    'Enter Other Area',
+                                    Icons.edit_location_alt_outlined,
+                                    hint: 'Type area or city name',
+                                    validator: (v) =>
+                                        Validators.required(v, 'Other area'),
+                                  ),
+                                ],
                                 _sep(16),
                                 _Field(
                                   _addressController,
