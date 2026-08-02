@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -141,173 +142,184 @@ class _CardScreenState extends State<CardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // ================= REAL GOOGLE MAP =================
-          Positioned.fill(
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: _kolkata,
-                zoom: 11,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFFB91419),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // ================= REAL GOOGLE MAP =================
+            Positioned.fill(
+              child: GoogleMap(
+                initialCameraPosition: const CameraPosition(
+                  target: _kolkata,
+                  zoom: 11,
+                ),
+                mapType: _mapType,
+                markers: _markers,
+                myLocationEnabled: _myLocationEnabled,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                compassEnabled: false,
+                mapToolbarEnabled: false,
+                padding: const EdgeInsets.only(top: 68, bottom: 245),
+                onMapCreated: (controller) => _mapController = controller,
               ),
-              mapType: _mapType,
-              markers: _markers,
-              myLocationEnabled: _myLocationEnabled,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              compassEnabled: false,
-              mapToolbarEnabled: false,
-              padding: const EdgeInsets.only(top: 68, bottom: 245),
-              onMapCreated: (controller) => _mapController = controller,
             ),
-          ),
 
-          // ================= TOP APP BAR =================
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 58,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: const BoxDecoration(
-                color: Color(0xFFB91419),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x26000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Map & Locations',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+            // ================= TOP APP BAR =================
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 58,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFB91419),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x26000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Map & Locations',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ================= RIGHT MAP BUTTONS =================
+            Positioned(
+              right: 14,
+              top: 170,
+              child: Column(
+                children: [
+                  _buildMapActionButton(
+                    icon: Icons.my_location_rounded,
+                    onTap: _goToCurrentLocation,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  _buildMapActionButton(
+                    icon: Icons.layers_outlined,
+                    onTap: () => setState(() {
+                      _mapType = _mapType == MapType.normal
+                          ? MapType.hybrid
+                          : MapType.normal;
+                    }),
                   ),
                 ],
               ),
             ),
-          ),
 
-          // ================= RIGHT MAP BUTTONS =================
-          Positioned(
-            right: 14,
-            top: 170,
-            child: Column(
-              children: [
-                _buildMapActionButton(
-                  icon: Icons.my_location_rounded,
-                  onTap: _goToCurrentLocation,
-                ),
+            // ================= BOTTOM CARDS =================
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 70,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 185,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: pandals.length,
+                      physics: const BouncingScrollPhysics(),
+                      onPageChanged: (value) {
+                        setState(() {
+                          currentCardIndex = value;
+                        });
+                        final pandal = pandals[value];
+                        _mapController?.animateCamera(
+                          CameraUpdate.newLatLng(
+                            LatLng(pandal['latitude'], pandal['longitude']),
+                          ),
+                        );
+                      },
+                      itemBuilder: (context, index) {
+                        final pandal = pandals[index];
 
-                const SizedBox(height: 10),
-
-                _buildMapActionButton(
-                  icon: Icons.layers_outlined,
-                  onTap: () => setState(() {
-                    _mapType = _mapType == MapType.normal
-                        ? MapType.hybrid
-                        : MapType.normal;
-                  }),
-                ),
-              ],
-            ),
-          ),
-
-          // ================= HORIZONTAL CARDS =================
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 70,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: 185,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: pandals.length,
-                    physics: const BouncingScrollPhysics(),
-                    onPageChanged: (value) {
-                      setState(() {
-                        currentCardIndex = value;
-                      });
-                      final pandal = pandals[value];
-                      _mapController?.animateCamera(
-                        CameraUpdate.newLatLng(
-                          LatLng(pandal['latitude'], pandal['longitude']),
-                        ),
-                      );
-                    },
-                    itemBuilder: (context, index) {
-                      final pandal = pandals[index];
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 6,
-                        ),
-                        child: MapPandalCard(
-                          title: pandal['title'],
-                          location: pandal['location'],
-                          distance: pandal['distance'],
-                          rating: pandal['rating'],
-                          ratingCount: pandal['ratingCount'],
-                          crowd: pandal['crowd'],
-                          status: pandal['status'],
-                          closingTime: pandal['closingTime'],
-                          eta: pandal['eta'],
-                          imageUrl: pandal['image'],
-                          onFavourite: () {
-                            debugPrint('${pandal['title']} favourite clicked');
-                          },
-                          onDirection: () {
-                            _openDirections(pandal);
-                          },
-                        ),
-                      );
-                    },
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 6,
+                          ),
+                          child: MapPandalCard(
+                            title: pandal['title'],
+                            location: pandal['location'],
+                            distance: pandal['distance'],
+                            rating: pandal['rating'],
+                            ratingCount: pandal['ratingCount'],
+                            crowd: pandal['crowd'],
+                            status: pandal['status'],
+                            closingTime: pandal['closingTime'],
+                            eta: pandal['eta'],
+                            imageUrl: pandal['image'],
+                            onFavourite: () {
+                              debugPrint(
+                                '${pandal['title']} favourite clicked',
+                              );
+                            },
+                            onDirection: () {
+                              _openDirections(pandal);
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(pandals.length, (index) {
-                    final bool isSelected = index == currentCardIndex;
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(pandals.length, (index) {
+                      final bool isSelected = index == currentCardIndex;
 
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: isSelected ? 18 : 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFFB91419)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [
-                          BoxShadow(color: Color(0x33000000), blurRadius: 3),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
-              ],
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: isSelected ? 18 : 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFB91419)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x33000000), blurRadius: 3),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
