@@ -122,12 +122,9 @@ class FirestoreService {
   }
 
   Stream<List<PandalModel>> watchPandals() {
-    return _pandals
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs.map(PandalModel.fromFirestore).toList(),
-        );
+    return _pandals.snapshots().map(
+      (snapshot) => snapshot.docs.map(PandalModel.fromFirestore).toList(),
+    );
   }
 
   Stream<PandalModel?> watchPandal(String pandalId) {

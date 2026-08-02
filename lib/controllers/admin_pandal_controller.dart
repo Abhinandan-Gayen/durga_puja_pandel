@@ -31,7 +31,7 @@ class AdminPandalController extends ChangeNotifier {
     return _guardRun<String?>(() async {
       final id = await _firestoreService.addDocument(
         collectionPath: FirebaseConstants.pandalsCollection,
-        data: pandal.toMap(),
+        data: _visibleFormFields(pandal),
       );
       await _fetchAll();
       return id;
@@ -43,7 +43,7 @@ class AdminPandalController extends ChangeNotifier {
       await _firestoreService.updateDocument(
         collectionPath: FirebaseConstants.pandalsCollection,
         documentId: pandal.id,
-        data: pandal.toMap(),
+        data: _visibleFormFields(pandal),
       );
       await _fetchAll();
     });
@@ -66,11 +66,25 @@ class AdminPandalController extends ChangeNotifier {
   }
 
   Future<void> toggleActiveStatus(PandalModel pandal) async {
-    await updatePandal(pandal.copyWith(isActive: !pandal.isActive));
+    await _guardRun<void>(() async {
+      await _firestoreService.updateDocument(
+        collectionPath: FirebaseConstants.pandalsCollection,
+        documentId: pandal.id,
+        data: {'isActive': !pandal.isActive},
+      );
+      await _fetchAll();
+    });
   }
 
   Future<void> toggleFeaturedStatus(PandalModel pandal) async {
-    await updatePandal(pandal.copyWith(isFeatured: !pandal.isFeatured));
+    await _guardRun<void>(() async {
+      await _firestoreService.updateDocument(
+        collectionPath: FirebaseConstants.pandalsCollection,
+        documentId: pandal.id,
+        data: {'isFeatured': !pandal.isFeatured},
+      );
+      await _fetchAll();
+    });
   }
 
   Future<MediaModel?> uploadMedia({
@@ -113,6 +127,20 @@ class AdminPandalController extends ChangeNotifier {
     adminPandals = data.map(PandalModel.fromMap).toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _isFetching = false;
+  }
+
+  Map<String, dynamic> _visibleFormFields(PandalModel pandal) {
+    return {
+      'name': pandal.name,
+      'description': pandal.description,
+      'area': pandal.city,
+      'address': pandal.address,
+      'latitude': pandal.latitude,
+      'longitude': pandal.longitude,
+      'thumbnailUrl': pandal.thumbnailUrl,
+      'images': pandal.images,
+      'videos': pandal.videos,
+    };
   }
 
   Future<T?> _guardRun<T>(Future<T> Function() action) async {
