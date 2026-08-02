@@ -1,4 +1,5 @@
 import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
+import 'package:durga_puja_pandel/views/admin/slider-image-post/controller/slider_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +58,7 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
   void initState() {
     super.initState();
     authController = AuthController(authService, firestoreService);
-    
+
     // Setup listener to monitor auth state change and redirect using GetX
     authController.addListener(() {
       final route = Get.currentRoute;
@@ -119,6 +120,9 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
           create: (_) => MapController(mapService, locationService),
         ),
         ChangeNotifierProvider(create: (_) => AppShellController()),
+        ChangeNotifierProvider<SliderController>(
+          create: (_) => SliderController(),
+        ),
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {

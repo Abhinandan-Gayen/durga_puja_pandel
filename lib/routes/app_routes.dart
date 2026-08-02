@@ -1,16 +1,14 @@
+import 'package:durga_puja_pandel/views/admin/slider-image-post/ui/upload_slider_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-
 import '../controllers/auth_controller.dart';
 import '../views/admin/add_pandal_screen.dart';
 import '../views/admin/admin_dashboard_screen.dart';
 import '../views/admin/edit_pandal_screen.dart';
 import '../views/admin/manage_pandals_screen.dart';
-import '../views/admin/upload_media_screen.dart';
 import '../views/auth/forgot_password_screen.dart';
 import '../views/auth/login_screen.dart';
-// import '../views/auth/signup_screen.dart';
 import '../views/Users/onboarding_screen.dart';
 import '../views/Users/splash_screen.dart';
 import '../views/Users/bottom-navigationBar/ui/bottom_naigation.dart';
@@ -26,7 +24,10 @@ class AuthMiddleware extends GetMiddleware {
     if (context == null) return null;
 
     try {
-      final authController = Provider.of<AuthController>(context, listen: false);
+      final authController = Provider.of<AuthController>(
+        context,
+        listen: false,
+      );
 
       final isAdminPath = route.startsWith('/admin');
       final isAuthPath = {
@@ -64,14 +65,8 @@ class AppRoutes {
   const AppRoutes._();
 
   static final pages = [
-    GetPage(
-      name: '/',
-      page: () => const SplashScreen(),
-    ),
-    GetPage(
-      name: '/onboarding',
-      page: () => const OnboardingScreen(),
-    ),
+    GetPage(name: '/', page: () => const SplashScreen()),
+    GetPage(name: '/onboarding', page: () => const OnboardingScreen()),
     GetPage(
       name: '/login',
       page: () => const LoginScreen(),
@@ -87,18 +82,9 @@ class AppRoutes {
       page: () => const ForgotPasswordScreen(),
       middlewares: [AuthMiddleware()],
     ),
-    GetPage(
-      name: '/home',
-      page: () => const AppShell(),
-    ),
-    GetPage(
-      name: '/map',
-      page: () => const CardScreen(),
-    ),
-    GetPage(
-      name: '/pandal/:id',
-      page: () => const PandalDetailScreen(),
-    ),
+    GetPage(name: '/home', page: () => const AppShell()),
+    GetPage(name: '/map', page: () => const CardScreen()),
+    GetPage(name: '/pandal/:id', page: () => const PandalDetailScreen()),
     GetPage(
       name: '/admin',
       page: () => const AdminDashboardScreen(),
@@ -111,9 +97,7 @@ class AppRoutes {
     ),
     GetPage(
       name: '/admin/edit-pandal/:id',
-      page: () => EditPandalScreen(
-        pandalId: Get.parameters['id'] ?? '',
-      ),
+      page: () => EditPandalScreen(pandalId: Get.parameters['id'] ?? ''),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
@@ -123,7 +107,7 @@ class AppRoutes {
     ),
     GetPage(
       name: '/admin/upload-media',
-      page: () => const UploadMediaScreen(),
+      page: () => const UploadSliderScreen(),
       middlewares: [AuthMiddleware()],
     ),
   ];
