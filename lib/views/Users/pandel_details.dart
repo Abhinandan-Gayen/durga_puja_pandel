@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
+import 'favourite_route_map_screen.dart';
+import '../widgets/pandel.dart';
 import '../widgets/pandal_media_slider.dart';
 
 class PandalDetailScreen extends StatelessWidget {
@@ -354,7 +356,32 @@ class PandalDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomSheet: _buildBottomActionBar(),
+      bottomSheet: _buildBottomActionBar(
+        onNavigate: () {
+          final imageUrl = pandal.thumbnailUrl.isNotEmpty
+              ? pandal.thumbnailUrl
+              : pandal.images.isNotEmpty
+              ? pandal.images.first
+              : '';
+          final navigationPandal = Pandal(
+            pandal.name,
+            pandal.name,
+            pandal.area,
+            '',
+            pandal.averageRating.toStringAsFixed(1),
+            pandal.crowdLevel,
+            pandal.themeName,
+            imageUrl,
+            pandal.latitude,
+            pandal.longitude,
+          );
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => FavouriteRouteMapScreen(pandal: navigationPandal),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -613,7 +640,7 @@ class PandalDetailScreen extends StatelessWidget {
   }
 
   // The fixed bottom action bar
-  Widget _buildBottomActionBar() {
+  Widget _buildBottomActionBar({required VoidCallback onNavigate}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -632,7 +659,7 @@ class PandalDetailScreen extends StatelessWidget {
             Expanded(
               flex: 5,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: onNavigate,
                 icon: const Icon(Icons.near_me, color: Colors.white, size: 18),
                 label: const Text(
                   'Navigate',
