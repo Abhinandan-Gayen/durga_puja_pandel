@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
+import '../../core/services/location_service.dart';
 import '../../core/theme/normal_color.dart';
+import '../../core/utils/distance_helper.dart';
 import '../widgets/pandel.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -20,6 +22,27 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  double? _userLatitude;
+  double? _userLongitude;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserLocation();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final position = await LocationService().getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _userLatitude = position.latitude;
+        _userLongitude = position.longitude;
+      });
+    } catch (_) {
+      // Cards remain usable when location permission is unavailable.
+    }
+  }
 
   @override
   void dispose() {
@@ -113,11 +136,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     : pandal.images.isNotEmpty
                     ? pandal.images.first
                     : '';
+                final distanceKm = _userLatitude == null ||
+                        _userLongitude == null
+                    ? null
+                    : DistanceHelper.calculateDistanceInKm(
+                        _userLatitude!,
+                        _userLongitude!,
+                        pandal.latitude,
+                        pandal.longitude,
+                      );
+                final distanceText = distanceKm == null
+                    ? ''
+                    : distanceKm < 1
+                    ? '${(distanceKm * 1000).round()} m'
+                    : '${distanceKm.toStringAsFixed(1)} km';
                 final tilePandal = Pandal(
                   pandal.name,
                   pandal.name,
                   pandal.area,
-                  '',
+                  distanceText,
                   pandal.averageRating.toStringAsFixed(1),
                   pandal.crowdLevel,
                   pandal.themeName,

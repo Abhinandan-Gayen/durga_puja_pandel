@@ -161,7 +161,7 @@ class _PandalInfo extends StatelessWidget {
       ),
       const SizedBox(height: 4),
       Text(
-        '${pandal.area} · ${pandal.distance}',
+        pandal.area,
         style: const TextStyle(color: muted, fontSize: 12),
       ),
       const SizedBox(height: 7),
@@ -172,6 +172,11 @@ class _PandalInfo extends StatelessWidget {
             '⭐ ${pandal.rating}',
             style: const TextStyle(color: gold, fontSize: 12),
           ),
+          if (pandal.distance.trim().isNotEmpty)
+            Text(
+              '📍 ${pandal.distance}',
+              style: const TextStyle(color: muted, fontSize: 12),
+            ),
         ],
       ),
     ],
