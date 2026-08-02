@@ -70,20 +70,29 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFFD71319),
+        statusBarColor: Color(0xFFE50914),
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
-    return Scaffold(
-      backgroundColor: primaryRed,
-      body: CustomScrollView(
-        slivers: [
-          _buildPremiumSliverAppBar(),
-          SliverToBoxAdapter(child: _buildMainContent()),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFFE50914),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: primaryRed,
+        body: CustomScrollView(
+          slivers: [
+            _buildPremiumSliverAppBar(),
+            SliverToBoxAdapter(child: _buildMainContent()),
+          ],
+        ),
       ),
     );
   }
@@ -97,6 +106,13 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
     const double collapsedHeight = 72;
 
     return SliverAppBar(
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFFE50914),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
       pinned: true,
       floating: false,
       snap: false,
@@ -124,14 +140,10 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         ),
       ],
       centerTitle: true,
-      title: const Text(
-        'Durga Puja Pandal',
-        style: TextStyle(
-          color: Color(0xFFFFD17B),
-          fontSize: 19,
-          fontWeight: FontWeight.w700,
-          fontFamily: 'serif',
-        ),
+      title: Image.asset(
+        'assets/background-image.webp',
+        height: 90,
+        fit: BoxFit.contain,
       ),
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
