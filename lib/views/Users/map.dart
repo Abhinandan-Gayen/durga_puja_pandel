@@ -17,6 +17,7 @@ class CardScreen extends StatefulWidget {
 class _CardScreenState extends State<CardScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.88);
   GoogleMapController? _mapController;
+  MapController? _routeStateController;
 
   static const LatLng _kolkata = LatLng(22.5726, 88.3639);
   MapType _mapType = MapType.normal;
@@ -27,6 +28,7 @@ class _CardScreenState extends State<CardScreen> {
 
   @override
   void dispose() {
+    _routeStateController?.clearRoute(notify: false);
     _mapController?.dispose();
     _pageController.dispose();
     super.dispose();
@@ -124,6 +126,7 @@ class _CardScreenState extends State<CardScreen> {
   @override
   Widget build(BuildContext context) {
     final routeController = context.watch<MapController>();
+    _routeStateController = routeController;
     final firebasePandals = context.watch<PandalController>().pandals;
     final shellController = context.watch<AppShellController>();
     pandals = firebasePandals.where((pandal) => pandal.isActive).map((pandal) {

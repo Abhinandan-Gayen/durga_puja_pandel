@@ -40,10 +40,12 @@ class MapController extends ChangeNotifier {
     walkingDurationText = null;
     transitDurationText = null;
     errorMessage = null;
+    routePoints = [];
+    routePolylines = {};
     notifyListeners();
 
     try {
-      currentPosition ??= await _locationService.getCurrentPosition();
+      currentPosition = await _locationService.getCurrentPosition();
       final origin = currentPosition!;
       final routes = await Future.wait([
         _mapService.computeRoute(
@@ -68,7 +70,16 @@ class MapController extends ChangeNotifier {
         ),
       ]);
       final drivingRoute = routes[0];
-      routePoints = drivingRoute.points;
+      final exactOrigin = LatLng(origin.latitude, origin.longitude);
+      final exactDestination = LatLng(
+        destinationLatitude,
+        destinationLongitude,
+      );
+      routePoints = [
+        exactOrigin,
+        ...drivingRoute.points,
+        exactDestination,
+      ];
       routeDurationText = drivingRoute.durationText;
       routeDistanceText = drivingRoute.distanceText;
       walkingDurationText = routes[1].durationText;
@@ -76,7 +87,7 @@ class MapController extends ChangeNotifier {
       routePolylines = {
         Polyline(
           polylineId: const PolylineId('active_direction_route'),
-          points: drivingRoute.points,
+          points: routePoints,
           color: const Color(0xFFE50914),
           width: 6,
           startCap: Cap.roundCap,
@@ -96,7 +107,7 @@ class MapController extends ChangeNotifier {
     }
   }
 
-  void clearRoute() {
+  void clearRoute({bool notify = true}) {
     routingDestinationId = null;
     routeDurationText = null;
     routeDistanceText = null;
@@ -105,7 +116,7 @@ class MapController extends ChangeNotifier {
     routePoints = [];
     routePolylines = {};
     errorMessage = null;
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   Future<void> loadUserLocation() async {

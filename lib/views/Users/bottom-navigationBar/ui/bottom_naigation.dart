@@ -3,6 +3,7 @@ import 'package:durga_puja_pandel/views/Users/dashbord.dart';
 import 'package:durga_puja_pandel/views/Users/favoutiry.dart';
 import 'package:durga_puja_pandel/views/Users/map.dart';
 import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
+import 'package:durga_puja_pandel/controllers/map_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,13 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  void _selectTab(AppShellController shellController, int nextIndex) {
+    if (shellController.selectedIndex == 2 && nextIndex != 2) {
+      context.read<MapController>().clearRoute();
+    }
+    shellController.setIndex(nextIndex);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +159,7 @@ class _AppShellState extends State<AppShell> {
                       : null,
                   onTap: () {
                     Navigator.of(context).pop();
-                    shellController.setIndex(item.index);
+                    _selectTab(shellController, item.index);
                   },
                 ),
               );
@@ -295,7 +303,7 @@ class _AppShellState extends State<AppShell> {
                             behavior: HitTestBehavior.opaque,
                             onTap: () {
                               if (index != i) {
-                                shellController.setIndex(i);
+                                _selectTab(shellController, i);
                               }
                             },
                             child: SizedBox(
