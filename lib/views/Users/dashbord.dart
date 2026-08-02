@@ -22,6 +22,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   static const Color creamColor = Color(0xFFFFF8E9);
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _selectedArea;
 
   final List<Map<String, dynamic>> categories = [
     {'icon': Icons.temple_hindu_outlined, 'title': 'Top\nPandals'},
@@ -218,9 +219,30 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   }
 
   Widget _buildLocationButton() {
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(30),
+    final firebasePandals = context.watch<PandalController>().pandals;
+    final areas =
+        firebasePandals
+            .map((pandal) => pandal.area.trim())
+            .where((area) => area.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    return PopupMenuButton<String>(
+      tooltip: 'Select location',
+      offset: const Offset(0, 48),
+      onSelected: (area) {
+        setState(() => _selectedArea = area == '__all__' ? null : area);
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: '__all__',
+          child: Text('All Locations'),
+        ),
+        ...areas.map(
+          (area) => PopupMenuItem<String>(value: area, child: Text(area)),
+        ),
+      ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -235,21 +257,21 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.location_on, color: primaryRed, size: 20),
-            SizedBox(width: 6),
+            const Icon(Icons.location_on, color: primaryRed, size: 20),
+            const SizedBox(width: 6),
             Text(
-              'Kolkata, West Bengal',
-              style: TextStyle(
+              _selectedArea ?? 'All Locations',
+              style: const TextStyle(
                 color: Color(0xFF443C38),
                 fontSize: 13, // সাইজ স্ট্যান্ডার্ড করা হয়েছে
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: 4),
-            Icon(
+            const SizedBox(width: 4),
+            const Icon(
               Icons.keyboard_arrow_down_rounded,
               color: Color(0xFF574E49),
               size: 20,
@@ -323,15 +345,20 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   Widget _buildMainContent() {
     final pandalController = context.watch<PandalController>();
     final query = _searchQuery.trim().toLowerCase();
-    final displayedPandals = query.isEmpty
-        ? pandalController.featuredPandals
-        : pandalController.pandals.where((pandal) {
-            return pandal.name.toLowerCase().contains(query) ||
-                pandal.area.toLowerCase().contains(query) ||
-                pandal.city.toLowerCase().contains(query) ||
-                pandal.address.toLowerCase().contains(query) ||
-                pandal.description.toLowerCase().contains(query);
-          }).toList();
+    final displayedPandals = pandalController.pandals.where((pandal) {
+      final matchesLocation =
+          _selectedArea == null ||
+          pandal.area.toLowerCase() == _selectedArea!.toLowerCase();
+      if (!matchesLocation) return false;
+      if (query.isEmpty) {
+        return _selectedArea == null ? pandal.isFeatured : true;
+      }
+      return pandal.name.toLowerCase().contains(query) ||
+          pandal.area.toLowerCase().contains(query) ||
+          pandal.city.toLowerCase().contains(query) ||
+          pandal.address.toLowerCase().contains(query) ||
+          pandal.description.toLowerCase().contains(query);
+    }).toList();
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(
@@ -362,7 +389,11 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           // _buildCategories(),
           // const SizedBox(height: 15),
           _buildSectionHeader(
-            title: query.isEmpty ? 'Featured Pandals' : 'Search Results',
+            title: query.isNotEmpty
+                ? 'Search Results'
+                : _selectedArea == null
+                ? 'Featured Pandals'
+                : '$_selectedArea Pandals',
             onSeeAll: () {},
           ),
           // const SizedBox(height: 12),
