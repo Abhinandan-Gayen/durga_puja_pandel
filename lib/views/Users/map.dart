@@ -1,8 +1,8 @@
+import 'package:durga_puja_pandel/controllers/map_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
 class CardScreen extends StatefulWidget {
   const CardScreen({super.key});
@@ -17,7 +17,6 @@ class _CardScreenState extends State<CardScreen> {
 
   static const LatLng _kolkata = LatLng(22.5726, 88.3639);
   MapType _mapType = MapType.normal;
-  bool _myLocationEnabled = false;
 
   int currentCardIndex = 0;
 
@@ -97,24 +96,14 @@ class _CardScreenState extends State<CardScreen> {
   }).toSet();
 
   Future<void> _goToCurrentLocation() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      _showMessage('Please enable location services.');
-      return;
-    }
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      _showMessage('Location permission is required.');
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
+    final controller = context.read<MapController>();
+    await controller.loadUserLocation();
     if (!mounted) return;
-    setState(() => _myLocationEnabled = true);
+    final position = controller.currentPosition;
+    if (position == null) {
+      _showMessage(controller.errorMessage ?? 'Unable to get your location.');
+      return;
+    }
     await _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(
         LatLng(position.latitude, position.longitude),
@@ -123,14 +112,49 @@ class _CardScreenState extends State<CardScreen> {
     );
   }
 
-  Future<void> _openDirections(Map<String, dynamic> pandal) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination='
-      '${pandal['latitude']},${pandal['longitude']}',
+  Future<void> _showDirections(Map<String, dynamic> pandal, int index) async {
+    final controller = context.read<MapController>();
+    final success = await controller.loadRouteTo(
+      destinationId: '$index',
+      destinationLatitude: pandal['latitude'],
+      destinationLongitude: pandal['longitude'],
     );
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      _showMessage('Unable to open directions.');
+    if (!mounted) return;
+    if (!success) {
+      _showMessage(controller.errorMessage ?? 'Unable to calculate route.');
+      return;
     }
+    await _fitRoute(controller.routePoints);
+  }
+
+  Future<void> _fitRoute(List<LatLng> points) async {
+    if (points.isEmpty || _mapController == null) return;
+    if (points.length == 1) {
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(points.first, 16),
+      );
+      return;
+    }
+
+    var minLatitude = points.first.latitude;
+    var maxLatitude = points.first.latitude;
+    var minLongitude = points.first.longitude;
+    var maxLongitude = points.first.longitude;
+    for (final point in points.skip(1)) {
+      if (point.latitude < minLatitude) minLatitude = point.latitude;
+      if (point.latitude > maxLatitude) maxLatitude = point.latitude;
+      if (point.longitude < minLongitude) minLongitude = point.longitude;
+      if (point.longitude > maxLongitude) maxLongitude = point.longitude;
+    }
+    await _mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLatitude, minLongitude),
+          northeast: LatLng(maxLatitude, maxLongitude),
+        ),
+        70,
+      ),
+    );
   }
 
   void _showMessage(String message) {
@@ -142,6 +166,7 @@ class _CardScreenState extends State<CardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final routeController = context.watch<MapController>();
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFFE50914),
@@ -162,7 +187,8 @@ class _CardScreenState extends State<CardScreen> {
                 ),
                 mapType: _mapType,
                 markers: _markers,
-                myLocationEnabled: _myLocationEnabled,
+                polylines: routeController.routePolylines,
+                myLocationEnabled: routeController.currentPosition != null,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 compassEnabled: false,
@@ -198,8 +224,8 @@ class _CardScreenState extends State<CardScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -277,13 +303,24 @@ class _CardScreenState extends State<CardScreen> {
                             closingTime: pandal['closingTime'],
                             eta: pandal['eta'],
                             imageUrl: pandal['image'],
+                            isDirectionLoading:
+                                routeController.isRouteLoading &&
+                                routeController.routingDestinationId ==
+                                    '$index',
+                            directionSummary:
+                                routeController.routingDestinationId == '$index'
+                                ? [
+                                    routeController.routeDurationText,
+                                    routeController.routeDistanceText,
+                                  ].whereType<String>().join(' • ')
+                                : null,
                             onFavourite: () {
                               debugPrint(
                                 '${pandal['title']} favourite clicked',
                               );
                             },
                             onDirection: () {
-                              _openDirections(pandal);
+                              _showDirections(pandal, index);
                             },
                           ),
                         );
@@ -360,6 +397,8 @@ class MapPandalCard extends StatelessWidget {
   final String closingTime;
   final String eta;
   final String imageUrl;
+  final bool isDirectionLoading;
+  final String? directionSummary;
   final VoidCallback onFavourite;
   final VoidCallback onDirection;
 
@@ -375,6 +414,8 @@ class MapPandalCard extends StatelessWidget {
     required this.closingTime,
     required this.eta,
     required this.imageUrl,
+    this.isDirectionLoading = false,
+    this.directionSummary,
     required this.onFavourite,
     required this.onDirection,
   });
@@ -453,10 +494,12 @@ class MapPandalCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           child: const Padding(
                             padding: EdgeInsets.all(3),
-                            child: Icon(
-                              Icons.bookmark_border_rounded,
+                            child: Image(
+                              image: AssetImage(
+                                "assets/bottom_navigation/Favorite_light@4x.png",
+                              ),
+                              height: 21,
                               color: primaryRed,
-                              size: 21,
                             ),
                           ),
                         ),
@@ -479,37 +522,6 @@ class MapPandalCard extends StatelessWidget {
                             color: Color(0xFF625952),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFEEE6),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.local_fire_department_outlined,
-                                color: Color(0xFFE9673F),
-                                size: 12,
-                              ),
-                              SizedBox(width: 3),
-                              Text(
-                                'Popular',
-                                style: TextStyle(
-                                  color: Color(0xFFE9673F),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ],
@@ -538,146 +550,68 @@ class MapPandalCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 7),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.circle,
-                          color: Color(0xFF42A846),
-                          size: 8,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          status,
-                          style: const TextStyle(
-                            color: Color(0xFF42A846),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '• $closingTime',
-                          style: const TextStyle(
-                            color: Color(0xFF6C625C),
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
             ],
           ),
 
-          // const SizedBox(height: 10),
-
-          // Container(
-          //   padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
-          //   decoration: BoxDecoration(
-          //     color: const Color(0xFFFFF7EC),
-          //     borderRadius: BorderRadius.circular(14),
-          //     border: Border.all(color: const Color(0xFFF0E3D4)),
-          //   ),
-          //   child: Row(
-          //     children: [
-          //       Expanded(
-          //         child: _buildInfoItem(
-          //           icon: Icons.directions_car_outlined,
-          //           label: 'ETA',
-          //           value: eta,
-          //           subValue: distance,
-          //         ),
-          //       ),
-
-          //       Container(width: 1, height: 33, color: const Color(0xFFE7D9CA)),
-
-          //       Expanded(
-          //         child: _buildInfoItem(
-          //           icon: Icons.groups_2_outlined,
-          //           label: 'Crowd',
-          //           value: crowd,
-          //           valueColor: primaryRed,
-          //           subValue: 'Expect Delay',
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
           const SizedBox(height: 10),
 
           SizedBox(
             width: double.infinity,
             height: 40,
-            child: ElevatedButton.icon(
-              onPressed: onDirection,
-              icon: const Icon(
-                Icons.near_me_outlined,
-                color: Colors.white,
-                size: 17,
-              ),
-              label: const Text(
-                'Directions',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+            child: ElevatedButton(
+              onPressed: isDirectionLoading ? null : onDirection,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryRed,
+                disabledBackgroundColor: primaryRed,
                 elevation: 3,
                 shadowColor: primaryRed.withValues(alpha: 0.35),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isDirectionLoading)
+                    const SizedBox(
+                      width: 17,
+                      height: 17,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.near_me_outlined,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      isDirectionLoading
+                          ? 'Finding route...'
+                          : (directionSummary?.isNotEmpty ?? false)
+                          ? directionSummary!
+                          : 'Directions',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required String subValue,
-    Color? valueColor,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: const Color(0xFF5E554F), size: 21),
-
-        const SizedBox(width: 8),
-
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Color(0xFF8A817A), fontSize: 9),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                color: valueColor ?? const Color(0xFF332D29),
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              subValue,
-              style: const TextStyle(color: Color(0xFF8A817A), fontSize: 8),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

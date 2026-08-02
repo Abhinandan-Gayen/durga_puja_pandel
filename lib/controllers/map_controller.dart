@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -17,7 +17,96 @@ class MapController extends ChangeNotifier {
   PandalModel? selectedPandal;
   Map<String, int> areaWisePandalCount = {};
   bool isLoading = false;
+  bool isRouteLoading = false;
+  String? routingDestinationId;
+  String? routeDurationText;
+  String? routeDistanceText;
+  String? walkingDurationText;
+  String? transitDurationText;
+  List<LatLng> routePoints = [];
+  Set<Polyline> routePolylines = {};
   String? errorMessage;
+
+  Future<bool> loadRouteTo({
+    required String destinationId,
+    required double destinationLatitude,
+    required double destinationLongitude,
+  }) async {
+    if (isRouteLoading) return false;
+    isRouteLoading = true;
+    routingDestinationId = destinationId;
+    routeDurationText = null;
+    routeDistanceText = null;
+    walkingDurationText = null;
+    transitDurationText = null;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      currentPosition ??= await _locationService.getCurrentPosition();
+      final origin = currentPosition!;
+      final routes = await Future.wait([
+        _mapService.computeRoute(
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          destinationLatitude: destinationLatitude,
+          destinationLongitude: destinationLongitude,
+        ),
+        _mapService.computeRoute(
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          destinationLatitude: destinationLatitude,
+          destinationLongitude: destinationLongitude,
+          travelMode: 'WALK',
+        ),
+        _mapService.computeRoute(
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          destinationLatitude: destinationLatitude,
+          destinationLongitude: destinationLongitude,
+          travelMode: 'TRANSIT',
+        ),
+      ]);
+      final drivingRoute = routes[0];
+      routePoints = drivingRoute.points;
+      routeDurationText = drivingRoute.durationText;
+      routeDistanceText = drivingRoute.distanceText;
+      walkingDurationText = routes[1].durationText;
+      transitDurationText = routes[2].durationText;
+      routePolylines = {
+        Polyline(
+          polylineId: const PolylineId('active_direction_route'),
+          points: drivingRoute.points,
+          color: const Color(0xFFE50914),
+          width: 6,
+          startCap: Cap.roundCap,
+          endCap: Cap.roundCap,
+          jointType: JointType.round,
+        ),
+      };
+      return true;
+    } catch (error) {
+      errorMessage = error.toString().replaceFirst('Exception: ', '');
+      routePoints = [];
+      routePolylines = {};
+      return false;
+    } finally {
+      isRouteLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void clearRoute() {
+    routingDestinationId = null;
+    routeDurationText = null;
+    routeDistanceText = null;
+    walkingDurationText = null;
+    transitDurationText = null;
+    routePoints = [];
+    routePolylines = {};
+    errorMessage = null;
+    notifyListeners();
+  }
 
   Future<void> loadUserLocation() async {
     isLoading = true;
