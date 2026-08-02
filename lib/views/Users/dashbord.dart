@@ -1,9 +1,10 @@
-import 'dart:developer';
-
-import 'package:durga_puja_pandel/views/Users/pandel_details.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+
+import '../../controllers/pandal_controller.dart';
+import '../../models/pandal_model.dart';
 
 class DurgaPujaHomeScreen extends StatefulWidget {
   const DurgaPujaHomeScreen({super.key, required this.onMenuTap});
@@ -28,33 +29,6 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   ];
 
   // ৪টি প্যান্ডেল দেখানোর জন্য আরও একটি যোগ করা হয়েছে
-  final List<Map<String, String>> featuredPandals = [
-    {
-      'title': 'Sreebhumi\nSporting Club',
-      'rating': '4.8',
-      'location': 'Lake Town',
-      'image': 'assets/images/pandal_1.jpg',
-    },
-    {
-      'title': 'Santosh Mitra\nSquare',
-      'rating': '4.7',
-      'location': 'Entally',
-      'image': 'assets/images/pandal_2.jpg',
-    },
-    {
-      'title': 'Kumartuli\nPark',
-      'rating': '4.6',
-      'location': 'Kumartuli',
-      'image': 'assets/images/pandal_3.jpg',
-    },
-    {
-      'title': 'Bosepukur\nSitala Mandir',
-      'rating': '4.5',
-      'location': 'Kasba',
-      'image': 'assets/images/pandal_4.jpg',
-    },
-  ];
-
   final List<Map<String, String>> upcomingEvents = [
     {
       'month': 'SEP',
@@ -325,6 +299,9 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   // =========================================================
 
   Widget _buildMainContent() {
+    final firebaseFeaturedPandals = context
+        .watch<PandalController>()
+        .featuredPandals;
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(
@@ -356,7 +333,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           // const SizedBox(height: 15),
           _buildSectionHeader(title: 'Featured Pandals', onSeeAll: () {}),
           // const SizedBox(height: 12),
-          _buildFeaturedPandalsGrid(),
+          _buildFeaturedPandalsGrid(firebaseFeaturedPandals),
 
           const SizedBox(height: 24),
 
@@ -470,7 +447,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   // FEATURED PANDALS
   // =========================================================
 
-  Widget _buildFeaturedPandalsGrid() {
+  Widget _buildFeaturedPandalsGrid(List<PandalModel> featuredPandals) {
     return GridView.builder(
       padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
@@ -484,8 +461,15 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       itemCount: featuredPandals.length,
       itemBuilder: (context, index) {
         final pandal = featuredPandals[index];
+        final imageUrl = pandal.thumbnailUrl.trim().isNotEmpty
+            ? pandal.thumbnailUrl
+            : pandal.images.isNotEmpty
+            ? pandal.images.first
+            : '';
 
-        return Container(
+        return Opacity(
+          opacity: pandal.isActive ? 1 : 0.42,
+          child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             boxShadow: const [
@@ -508,9 +492,9 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             child: Material(
               color: darkRed,
               child: InkWell(
-                onTap: () {
-                  Get.to(() => PandalDetailScreen());
-                },
+                onTap: pandal.isActive
+                    ? () => Get.toNamed('/pandal/${pandal.id}')
+                    : null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -520,7 +504,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                         fit: StackFit.expand,
                         children: [
                           Image.network(
-                            "https://d34vm3j4h7f97z.cloudfront.net/original/4X/b/2/9/b29ad50aa12db216f75cce29857960bcb89fe546.jpeg",
+                            imageUrl,
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
@@ -705,7 +689,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              pandal['title']!,
+                              pandal.name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -744,7 +728,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
-                                        pandal['rating']!,
+                                        pandal.averageRating.toStringAsFixed(1),
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 11.5,
@@ -777,7 +761,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    pandal['location']!,
+                                    pandal.area,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -797,6 +781,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                 ),
               ),
             ),
+          ),
           ),
         );
       },
