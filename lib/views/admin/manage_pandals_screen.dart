@@ -127,6 +127,31 @@ class _AdminPandalTile extends StatelessWidget {
         child: Column(
           children: [
             ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox.square(
+                  dimension: 58,
+                  child: pandal.thumbnailUrl.trim().isEmpty
+                      ? _thumbnailFallback(context)
+                      : Image.network(
+                          pandal.thumbnailUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              _thumbnailFallback(context),
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ),
               title: Text(pandal.name),
               subtitle: Text('${pandal.area}, ${pandal.city}'),
               trailing: Wrap(
@@ -176,6 +201,16 @@ class _AdminPandalTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _thumbnailFallback(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.temple_hindu_rounded,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }
