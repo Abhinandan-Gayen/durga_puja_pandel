@@ -198,8 +198,8 @@ class _CardScreenState extends State<CardScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -453,10 +453,12 @@ class MapPandalCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           child: const Padding(
                             padding: EdgeInsets.all(3),
-                            child: Icon(
-                              Icons.bookmark_border_rounded,
+                            child: Image(
+                              image: AssetImage(
+                                "assets/bottom_navigation/Favorite_light@4x.png",
+                              ),
+                              height: 21,
                               color: primaryRed,
-                              size: 21,
                             ),
                           ),
                         ),
@@ -479,37 +481,6 @@ class MapPandalCard extends StatelessWidget {
                             color: Color(0xFF625952),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFEEE6),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.local_fire_department_outlined,
-                                color: Color(0xFFE9673F),
-                                size: 12,
-                              ),
-                              SizedBox(width: 3),
-                              Text(
-                                'Popular',
-                                style: TextStyle(
-                                  color: Color(0xFFE9673F),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ],
@@ -538,75 +509,12 @@ class MapPandalCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 7),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.circle,
-                          color: Color(0xFF42A846),
-                          size: 8,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          status,
-                          style: const TextStyle(
-                            color: Color(0xFF42A846),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '• $closingTime',
-                          style: const TextStyle(
-                            color: Color(0xFF6C625C),
-                            fontSize: 9,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
             ],
           ),
 
-          // const SizedBox(height: 10),
-
-          // Container(
-          //   padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
-          //   decoration: BoxDecoration(
-          //     color: const Color(0xFFFFF7EC),
-          //     borderRadius: BorderRadius.circular(14),
-          //     border: Border.all(color: const Color(0xFFF0E3D4)),
-          //   ),
-          //   child: Row(
-          //     children: [
-          //       Expanded(
-          //         child: _buildInfoItem(
-          //           icon: Icons.directions_car_outlined,
-          //           label: 'ETA',
-          //           value: eta,
-          //           subValue: distance,
-          //         ),
-          //       ),
-
-          //       Container(width: 1, height: 33, color: const Color(0xFFE7D9CA)),
-
-          //       Expanded(
-          //         child: _buildInfoItem(
-          //           icon: Icons.groups_2_outlined,
-          //           label: 'Crowd',
-          //           value: crowd,
-          //           valueColor: primaryRed,
-          //           subValue: 'Expect Delay',
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
           const SizedBox(height: 10),
 
           SizedBox(
@@ -639,45 +547,6 @@ class MapPandalCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required String subValue,
-    Color? valueColor,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: const Color(0xFF5E554F), size: 21),
-
-        const SizedBox(width: 8),
-
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Color(0xFF8A817A), fontSize: 9),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                color: valueColor ?? const Color(0xFF332D29),
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              subValue,
-              style: const TextStyle(color: Color(0xFF8A817A), fontSize: 8),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

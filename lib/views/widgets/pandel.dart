@@ -37,6 +37,7 @@ class PandalTile extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Color(0xFFFFFCF6),
+        // color: Colors.red,
         borderRadius: BorderRadius.circular(20),
         // border: Border.all(color: border),
         boxShadow: [
