@@ -1,9 +1,11 @@
 import 'package:durga_puja_pandel/core/theme/normal_color.dart';
-import 'package:durga_puja_pandel/core/utils/globa_data.dart';
 import 'package:durga_puja_pandel/views/Users/favourite_route_map_screen.dart';
 import 'package:durga_puja_pandel/views/widgets/pandel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import '../../controllers/pandal_controller.dart';
 
 class FavouritesScreen extends StatefulWidget {
   const FavouritesScreen({
@@ -21,6 +23,10 @@ class FavouritesScreen extends StatefulWidget {
 class _FavouritesScreenState extends State<FavouritesScreen> {
   @override
   Widget build(BuildContext context) {
+    final firebasePandals = context.watch<PandalController>().pandals;
+    final savedIndexes = widget.saved
+        .where((index) => index >= 0 && index < firebasePandals.length)
+        .toList();
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8E9),
       appBar: AppBar(
@@ -90,7 +96,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
           Row(
             children: [
               Text(
-                '${widget.saved.length} pandals saved',
+                '${savedIndexes.length} pandals saved',
                 style: const TextStyle(color: Colors.black, fontSize: 16),
               ),
               const Spacer(),
@@ -98,30 +104,49 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          if (widget.saved.isEmpty)
+          if (savedIndexes.isEmpty)
             const Padding(
               padding: EdgeInsets.all(50),
               child: Center(child: Text('No favourites yet')),
             )
           else
-            ...widget.saved.map(
-              (i) => Padding(
+            ...savedIndexes.map((index) {
+              final firebasePandal = firebasePandals[index];
+              final imageUrl = firebasePandal.thumbnailUrl.isNotEmpty
+                  ? firebasePandal.thumbnailUrl
+                  : firebasePandal.images.isNotEmpty
+                  ? firebasePandal.images.first
+                  : '';
+              final tilePandal = Pandal(
+                firebasePandal.name,
+                firebasePandal.name,
+                firebasePandal.area,
+                '',
+                firebasePandal.averageRating.toStringAsFixed(1),
+                firebasePandal.crowdLevel,
+                firebasePandal.themeName,
+                imageUrl,
+                firebasePandal.latitude,
+                firebasePandal.longitude,
+              );
+
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: PandalTile(
-                  pandal: pandals[i],
+                  pandal: tilePandal,
                   saved: true,
-                  onSaved: () => widget.onSaved(i),
+                  onSaved: () => widget.onSaved(index),
                   onNavigate: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) =>
-                            FavouriteRouteMapScreen(pandal: pandals[i]),
+                            FavouriteRouteMapScreen(pandal: tilePandal),
                       ),
                     );
                   },
                 ),
-              ),
-            ),
+              );
+            }),
           SizedBox(height: 60),
         ],
       ),
