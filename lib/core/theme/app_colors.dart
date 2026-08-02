@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   const AppColors._();
-
   static const deepRed = Color(0xFF8B1E24);
   static const deepRedDark = Color(0xFFE57373);
   static const vermilion = Color(0xFFE24329);
