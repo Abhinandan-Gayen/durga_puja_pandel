@@ -182,29 +182,33 @@ class PandalDetailScreen extends StatelessWidget {
                           itemCount: pandal.images.length,
                           separatorBuilder: (_, _) => const SizedBox(width: 12),
                           itemBuilder: (context, index) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: SizedBox(
-                                width: 210,
-                                child: Image.network(
-                                  pandal.images[index],
-                                  fit: BoxFit.cover,
-                                  loadingBuilder: (context, child, progress) {
-                                    if (progress == null) return child;
-                                    return const ColoredBox(
-                                      color: Color(0xFFFFE6BE),
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
+                            final imageUrl = pandal.images[index];
+                            return GestureDetector(
+                              onTap: () => _showImagePreview(context, imageUrl),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: SizedBox(
+                                  width: 210,
+                                  child: Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, progress) {
+                                      if (progress == null) return child;
+                                      return const ColoredBox(
+                                        color: Color(0xFFFFE6BE),
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                          ),
                                         ),
+                                      );
+                                    },
+                                    errorBuilder: (_, _, _) => const ColoredBox(
+                                      color: Color(0xFFFFE6BE),
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 38,
                                       ),
-                                    );
-                                  },
-                                  errorBuilder: (_, _, _) => const ColoredBox(
-                                    color: Color(0xFFFFE6BE),
-                                    child: Icon(
-                                      Icons.broken_image_outlined,
-                                      size: 38,
                                     ),
                                   ),
                                 ),
@@ -316,6 +320,62 @@ class PandalDetailScreen extends StatelessWidget {
         ],
       ),
       bottomSheet: _buildBottomActionBar(),
+    );
+  }
+
+  Future<void> _showImagePreview(BuildContext context, String imageUrl) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (dialogContext) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 5,
+                    boundaryMargin: const EdgeInsets.all(80),
+                    child: Center(
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.white70,
+                          size: 64,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
