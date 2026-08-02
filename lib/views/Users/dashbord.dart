@@ -340,7 +340,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           // _buildCategories(),
           // const SizedBox(height: 15),
           _buildSectionHeader(title: 'Featured Pandals', onSeeAll: () {}),
-          const SizedBox(height: 12),
+          // const SizedBox(height: 12),
           _buildFeaturedPandalsGrid(),
 
           const SizedBox(height: 24),
@@ -456,6 +456,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
   Widget _buildFeaturedPandalsGrid() {
     return GridView.builder(
+      padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

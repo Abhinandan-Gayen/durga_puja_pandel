@@ -76,77 +76,53 @@ class PandalTile extends StatelessWidget {
                 ],
               ),
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Image.network(
-                      pandal.image,
-                      width: double.infinity,
-                      height: 160,
-                      fit: BoxFit.cover,
-                      errorBuilder: errorImage,
-                    ),
-                    const Positioned(top: 12, left: 12, child: OpenPill()),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: IconButton.filled(
+          : Padding(
+              padding: const EdgeInsets.all(11),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: Image.network(
+                          pandal.image,
+                          width: 88,
+                          height: 88,
+                          fit: BoxFit.cover,
+                          errorBuilder: errorImage,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _PandalInfo(
+                          pandal: pandal,
+                          crowdColor: crowdColor,
+                        ),
+                      ),
+                      IconButton(
                         onPressed: onSaved,
                         icon: Icon(
                           saved ? Icons.favorite : Icons.favorite_border,
-                        ),
-                        style: IconButton.styleFrom(backgroundColor: red),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 10,
-                      left: 12,
-                      child: Text(
-                        '⭐ ${pandal.rating}',
-                        style: const TextStyle(
-                          color: gold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 10,
-                      right: 12,
-                      child: Text(pandal.distance),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _PandalInfo(pandal: pandal, crowdColor: crowdColor),
-                      const SizedBox(height: 12),
-                      LinearProgressIndicator(
-                        value: pandal.crowd == 'High'
-                            ? .85
-                            : pandal.crowd == 'Low'
-                            ? .25
-                            : .58,
-                        color: crowdColor,
-                        backgroundColor: border,
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.navigation_outlined),
-                          label: const Text('Navigate'),
+                          color: !saved ? null : Colors.red,
+                          size: 30,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB91419),
+                      ),
+                      onPressed: () {},
+                      icon: const Icon(Icons.navigation_outlined),
+                      label: const Text('Navigate'),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }
@@ -185,18 +161,6 @@ class _PandalInfo extends StatelessWidget {
           Text(
             '⭐ ${pandal.rating}',
             style: const TextStyle(color: gold, fontSize: 12),
-          ),
-          Text(
-            pandal.crowd,
-            style: TextStyle(
-              color: crowdColor,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Text(
-            '● Open',
-            style: TextStyle(color: Colors.green, fontSize: 12),
           ),
         ],
       ),

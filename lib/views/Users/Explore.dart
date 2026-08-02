@@ -14,13 +14,6 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   int filter = 0;
   String query = '';
-  final filters = const [
-    'All',
-    'Nearby',
-    'Award Winners',
-    'Traditional',
-    'Eco Theme',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -56,25 +49,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: List.generate(
-                filters.length,
-                (i) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    selectedColor: gold,
-                    labelStyle: TextStyle(color: bg),
-                    label: Text(filters[i]),
-                    selected: filter == i,
-                    onSelected: (_) => setState(() => filter = i),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
+          // SingleChildScrollView(
+          //   scrollDirection: Axis.horizontal,
+          //   child: Row(
+          //     children: List.generate(
+          //       filters.length,
+          //       (i) => Padding(
+          //         padding: const EdgeInsets.only(right: 8),
+          //         child: ChoiceChip(
+          //           selectedColor: gold,
+          //           labelStyle: TextStyle(color: bg),
+          //           label: Text(filters[i]),
+          //           selected: filter == i,
+          //           onSelected: (_) => setState(() => filter = i),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
+          // const SizedBox(height: 18),
           Row(
             children: [
               Text('${result.length} pandals found'),
