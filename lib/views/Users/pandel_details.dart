@@ -245,12 +245,27 @@ class PandalDetailScreen extends StatelessWidget {
                                   color: Colors.black87,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.play_circle_fill_rounded,
-                                    color: Colors.white,
-                                    size: 62,
-                                  ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    IgnorePointer(
+                                      child: PandalVideoPlayer(
+                                        url: videoUrl,
+                                        autoPlay: false,
+                                        fit: BoxFit.cover,
+                                        controlsEnabled: false,
+                                      ),
+                                    ),
+                                    const ColoredBox(color: Colors.black26),
+                                    const Center(
+                                      child: Icon(
+                                        Icons.play_circle_fill_rounded,
+                                        color: Colors.white,
+                                        size: 62,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );

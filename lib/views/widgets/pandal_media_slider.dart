@@ -55,11 +55,13 @@ class _VideoPreview extends StatefulWidget {
     required this.url,
     this.autoPlay = false,
     this.fit = BoxFit.cover,
+    this.controlsEnabled = true,
   });
 
   final String url;
   final bool autoPlay;
   final BoxFit fit;
+  final bool controlsEnabled;
 
   @override
   State<_VideoPreview> createState() => _VideoPreviewState();
@@ -83,7 +85,7 @@ class _VideoPreviewState extends State<_VideoPreview> {
         return;
       }
       setState(() => _isReady = true);
-      _hideControlsAfterDelay();
+      if (widget.controlsEnabled) _hideControlsAfterDelay();
     });
   }
 
@@ -135,7 +137,7 @@ class _VideoPreviewState extends State<_VideoPreview> {
             child: VideoPlayer(_controller),
           ),
         ),
-        Positioned.fill(
+        if (widget.controlsEnabled) Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _handleVideoTap,
@@ -168,17 +170,24 @@ class PandalVideoPlayer extends StatelessWidget {
     required this.url,
     this.autoPlay = true,
     this.fit = BoxFit.contain,
+    this.controlsEnabled = true,
   });
 
   final String url;
   final bool autoPlay;
   final BoxFit fit;
+  final bool controlsEnabled;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.black,
-      child: _VideoPreview(url: url, autoPlay: autoPlay, fit: fit),
+      child: _VideoPreview(
+        url: url,
+        autoPlay: autoPlay,
+        fit: fit,
+        controlsEnabled: controlsEnabled,
+      ),
     );
   }
 }
