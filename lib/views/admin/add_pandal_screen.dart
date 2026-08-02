@@ -203,6 +203,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     );
     if (match.isNotEmpty) {
       _city = match;
+      _otherCityController.clear();
+    } else {
+      _city = 'Others';
+      _otherCityController.text = cityName.trim();
     }
   }
 
@@ -214,7 +218,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       _areaController.text = area;
     }
 
-    _setCityFromReverseGeocode(pm.administrativeArea ?? pm.locality);
+    _setCityFromReverseGeocode(pm.locality ?? pm.administrativeArea);
   }
 
   Future<void> _resolveCurrentLocation() async {

@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -41,44 +42,29 @@ class LocationPickerScreen extends StatefulWidget {
 class _LocationPickerScreenState extends State<LocationPickerScreen> {
   GoogleMapController? _mapController;
   late LatLng _selectedPosition;
-  final Set<Marker> _markers = {};
+  final TextEditingController _searchController = TextEditingController();
   String? _resolvedAddress;
   String? _resolvedArea;
   String? _resolvedCity;
   bool _isResolvingLocation = false;
   bool _isResolvingAddress = false;
-  bool _hasMovedMarker = false;
+  bool _isSearching = false;
+  bool _isSaving = false;
+  bool _myLocationEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedPosition = LatLng(
-      widget.initialLatitude,
-      widget.initialLongitude,
-    );
-    _addMarker();
+    _selectedPosition = LatLng(widget.initialLatitude, widget.initialLongitude);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _resolveAddress();
+      if (mounted) _useCurrentLocation(showError: false);
     });
   }
 
-  void _addMarker() {
-    _markers.clear();
-    _markers.add(
-      Marker(
-        markerId: const MarkerId('selected'),
-        position: _selectedPosition,
-      ),
-    );
-  }
-
-  void _updatePosition(LatLng position) {
+  void _onCameraMove(CameraPosition position) {
     setState(() {
-      _selectedPosition = position;
-      _hasMovedMarker = true;
-      _addMarker();
+      _selectedPosition = position.target;
     });
-    _resolveAddress();
   }
 
   Future<void> _resolveAddress() async {
@@ -102,7 +88,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         setState(() {
           _resolvedAddress = parts.isNotEmpty ? parts : null;
           _resolvedArea = pm.subLocality ?? pm.locality;
-          _resolvedCity = pm.administrativeArea ?? pm.locality;
+          _resolvedCity = pm.locality ?? pm.administrativeArea;
         });
       } else {
         setState(() => _resolvedAddress = null);
@@ -114,41 +100,26 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
   }
 
-  Future<void> _useCurrentLocation() async {
+  Future<void> _useCurrentLocation({bool showError = true}) async {
     if (_isResolvingLocation) return;
     setState(() => _isResolvingLocation = true);
     try {
       final locationService = context.read<LocationService>();
 
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final position = await locationService.getCurrentPosition();
       if (!mounted) return;
-      if (!serviceEnabled) {
+
+      setState(() {
+        _selectedPosition = LatLng(position.latitude, position.longitude);
+        _myLocationEnabled = true;
+      });
+      await _animateToSelected(zoom: 16);
+      await _resolveAddress();
+    } catch (error) {
+      if (mounted && showError) {
         SnackbarHelper.showError(
           context,
-          'Location services are disabled. Please enable them in Settings.',
-        );
-        return;
-      }
-
-      final granted = await locationService.requestLocationPermission();
-      if (!mounted) return;
-      if (!granted) {
-        SnackbarHelper.showError(context, 'Location permission denied.');
-        return;
-      }
-
-      final position = await locationService.getCurrentPosition().timeout(
-        const Duration(seconds: 15),
-      );
-      if (!mounted) return;
-
-      _updatePosition(LatLng(position.latitude, position.longitude));
-      _animateToSelected(zoom: 16);
-    } catch (_) {
-      if (mounted) {
-        SnackbarHelper.showError(
-          context,
-          'Unable to fetch current location. Please try again.',
+          error.toString().replaceFirst('Exception: ', ''),
         );
       }
     } finally {
@@ -156,28 +127,62 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
   }
 
-  void _animateToSelected({double zoom = 14}) {
-    _mapController?.animateCamera(
+  Future<void> _animateToSelected({double zoom = 14}) async {
+    await _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(_selectedPosition, zoom),
     );
   }
 
-  void _confirm() {
-    _resolveAddress().then((_) {
+  Future<void> _searchPlace() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty || _isSearching) return;
+    setState(() => _isSearching = true);
+    try {
+      final results = await locationFromAddress(query);
       if (!mounted) return;
-      Navigator.of(context).pop(  LocationPickerResult(
+      if (results.isEmpty) {
+        SnackbarHelper.showError(context, 'Location not found.');
+        return;
+      }
+      final result = results.first;
+      setState(() {
+        _selectedPosition = LatLng(result.latitude, result.longitude);
+      });
+      await _animateToSelected(zoom: 16);
+      await _resolveAddress();
+      if (mounted) FocusScope.of(context).unfocus();
+    } catch (_) {
+      if (mounted) {
+        SnackbarHelper.showError(
+          context,
+          'Unable to find that location. Try a more specific name.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
+    }
+  }
+
+  Future<void> _confirm() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    await _resolveAddress();
+    if (!mounted) return;
+    Navigator.of(context).pop(
+      LocationPickerResult(
         latitude: _selectedPosition.latitude,
         longitude: _selectedPosition.longitude,
         area: _resolvedArea,
         city: _resolvedCity,
         address: _resolvedAddress,
-      ));
-    });
+      ),
+    );
   }
 
   @override
   void dispose() {
     _mapController?.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -191,11 +196,27 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           TextButton.icon(
-            onPressed: _confirm,
-            icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+            onPressed: _isSaving ? null : _confirm,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(
+                    Icons.save_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
             label: const Text(
-              'Confirm',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              'Save',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -207,19 +228,76 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               target: _selectedPosition,
               zoom: 14,
             ),
-            onMapCreated: (controller) => _mapController = controller,
-            onTap: _updatePosition,
-            markers: _markers,
-            myLocationEnabled: true,
+            onMapCreated: (controller) {
+              _mapController = controller;
+              _animateToSelected();
+            },
+            onCameraMove: _onCameraMove,
+            onCameraIdle: _resolveAddress,
+            myLocationEnabled: _myLocationEnabled,
             myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
           ),
-          Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.only(bottom: 48),
-            child: const Icon(
-              Icons.location_on,
-              color: AppColors.deepRed,
-              size: 48,
+          const IgnorePointer(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 38),
+                child: Icon(
+                  Icons.location_on,
+                  color: AppColors.deepRed,
+                  size: 50,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black38,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 14,
+            left: 14,
+            right: 14,
+            child: Material(
+              color: Colors.white,
+              elevation: 5,
+              borderRadius: BorderRadius.circular(16),
+              child: TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _searchPlace(),
+                decoration: InputDecoration(
+                  hintText: 'Search area, city or place...',
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.deepRed,
+                  ),
+                  suffixIcon: _isSearching
+                      ? const Padding(
+                          padding: EdgeInsets.all(14),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.deepRed,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          onPressed: _searchPlace,
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: AppColors.deepRed,
+                          ),
+                        ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -245,8 +323,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 16, color: AppColors.deepRed),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: AppColors.deepRed,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -278,8 +359,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.pin_drop, size: 16,
-                          color: AppColors.deepRed),
+                      const Icon(
+                        Icons.pin_drop,
+                        size: 16,
+                        color: AppColors.deepRed,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${_selectedPosition.latitude.toStringAsFixed(6)}, ${_selectedPosition.longitude.toStringAsFixed(6)}',
