@@ -11,8 +11,11 @@ class Pandal {
     this.crowd,
     this.theme,
     this.image,
+    this.latitude,
+    this.longitude,
   );
   final String bn, en, area, distance, rating, crowd, theme, image;
+  final double latitude, longitude;
 }
 
 class PandalTile extends StatelessWidget {
@@ -22,10 +25,12 @@ class PandalTile extends StatelessWidget {
     this.compact = false,
     this.saved = false,
     this.onSaved,
+    this.onNavigate,
   });
   final Pandal pandal;
   final bool compact, saved;
   final VoidCallback? onSaved;
+  final VoidCallback? onNavigate;
   @override
   Widget build(BuildContext context) {
     final crowdColor = pandal.crowd == 'Low'
@@ -117,7 +122,7 @@ class PandalTile extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFB91419),
                       ),
-                      onPressed: () {},
+                      onPressed: onNavigate ?? () {},
                       icon: const Image(
                         image: AssetImage("assets/Send_light@4x.png"),
                         color: Colors.white,

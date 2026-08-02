@@ -1,0 +1,333 @@
+import 'package:durga_puja_pandel/controllers/map_controller.dart';
+import 'package:durga_puja_pandel/views/widgets/pandel.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
+
+class FavouriteRouteMapScreen extends StatefulWidget {
+  const FavouriteRouteMapScreen({super.key, required this.pandal});
+
+  final Pandal pandal;
+
+  @override
+  State<FavouriteRouteMapScreen> createState() =>
+      _FavouriteRouteMapScreenState();
+}
+
+class _FavouriteRouteMapScreenState extends State<FavouriteRouteMapScreen> {
+  GoogleMapController? _googleMapController;
+  bool _routeRequested = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_routeRequested) return;
+    _routeRequested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadRoute());
+  }
+
+  Future<void> _loadRoute() async {
+    if (!mounted) return;
+    final controller = context.read<MapController>();
+    controller.clearRoute();
+    final success = await controller.loadRouteTo(
+      destinationId: 'favourite_${widget.pandal.en}',
+      destinationLatitude: widget.pandal.latitude,
+      destinationLongitude: widget.pandal.longitude,
+    );
+    if (!mounted) return;
+    if (success) {
+      await _fitRoute(controller.routePoints);
+    }
+  }
+
+  Future<void> _fitRoute(List<LatLng> points) async {
+    final map = _googleMapController;
+    if (map == null || points.isEmpty) return;
+
+    var minLatitude = points.first.latitude;
+    var maxLatitude = points.first.latitude;
+    var minLongitude = points.first.longitude;
+    var maxLongitude = points.first.longitude;
+    for (final point in points.skip(1)) {
+      if (point.latitude < minLatitude) minLatitude = point.latitude;
+      if (point.latitude > maxLatitude) maxLatitude = point.latitude;
+      if (point.longitude < minLongitude) minLongitude = point.longitude;
+      if (point.longitude > maxLongitude) maxLongitude = point.longitude;
+    }
+
+    if (minLatitude == maxLatitude && minLongitude == maxLongitude) {
+      await map.animateCamera(CameraUpdate.newLatLngZoom(points.first, 16));
+      return;
+    }
+
+    await map.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLatitude, minLongitude),
+          northeast: LatLng(maxLatitude, maxLongitude),
+        ),
+        72,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _googleMapController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<MapController>();
+    final destination = LatLng(widget.pandal.latitude, widget.pandal.longitude);
+    final markers = <Marker>{
+      Marker(
+        markerId: const MarkerId('favourite_destination'),
+        position: destination,
+        infoWindow: InfoWindow(
+          title: widget.pandal.en,
+          snippet: widget.pandal.area,
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      ),
+      if (controller.currentPosition != null)
+        Marker(
+          markerId: const MarkerId('route_origin'),
+          position: LatLng(
+            controller.currentPosition!.latitude,
+            controller.currentPosition!.longitude,
+          ),
+          infoWindow: const InfoWindow(title: 'Your location'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
+        ),
+    };
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: destination,
+                zoom: 13,
+              ),
+              markers: markers,
+              polylines: controller.routePolylines,
+              myLocationEnabled: controller.currentPosition != null,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              compassEnabled: true,
+              padding: const EdgeInsets.only(top: 90, bottom: 120),
+              onMapCreated: (mapController) {
+                _googleMapController = mapController;
+                if (controller.routePoints.isNotEmpty) {
+                  _fitRoute(controller.routePoints);
+                }
+              },
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    _MapButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 13,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x26000000),
+                              blurRadius: 12,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          widget.pandal.en,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF29231F),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: 24,
+            child: _RouteStatusCard(
+              isLoading: controller.isRouteLoading,
+              duration: controller.routeDurationText,
+              distance: controller.routeDistanceText,
+              error: controller.errorMessage,
+              onRetry: _loadRoute,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapButton extends StatelessWidget {
+  const _MapButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 4,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(icon, color: const Color(0xFFB91419)),
+        ),
+      ),
+    );
+  }
+}
+
+class _RouteStatusCard extends StatelessWidget {
+  const _RouteStatusCard({
+    required this.isLoading,
+    required this.duration,
+    required this.distance,
+    required this.error,
+    required this.onRetry,
+  });
+
+  final bool isLoading;
+  final String? duration;
+  final String? distance;
+  final String? error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 18,
+            offset: Offset(0, 7),
+          ),
+        ],
+      ),
+      child: isLoading
+          ? const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 21,
+                  height: 21,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Color(0xFFB91419),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Finding the best road...',
+                  style: TextStyle(
+                    color: Color(0xFF29231F),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            )
+          : error != null
+          ? Row(
+              children: [
+                const Icon(Icons.error_outline, color: Color(0xFFB91419)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    error!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF5E554F)),
+                  ),
+                ),
+                TextButton(onPressed: onRetry, child: const Text('Retry')),
+              ],
+            )
+          : Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: Color(0xFFFFECEC),
+                  child: Icon(
+                    Icons.directions_car_rounded,
+                    color: Color(0xFFB91419),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        duration ?? 'Route ready',
+                        style: const TextStyle(
+                          color: Color(0xFF29231F),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        distance ?? '',
+                        style: const TextStyle(color: Color(0xFF746B65)),
+                      ),
+                    ],
+                  ),
+                ),
+                const Text(
+                  'Driving',
+                  style: TextStyle(
+                    color: Color(0xFFB91419),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}

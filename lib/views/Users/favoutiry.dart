@@ -1,7 +1,7 @@
 import 'package:durga_puja_pandel/core/theme/normal_color.dart';
 import 'package:durga_puja_pandel/core/utils/globa_data.dart';
+import 'package:durga_puja_pandel/views/Users/favourite_route_map_screen.dart';
 import 'package:durga_puja_pandel/views/widgets/pandel.dart';
-import 'package:durga_puja_pandel/views/widgets/satrtcard.dart';
 import 'package:flutter/material.dart';
 
 class FavouritesScreen extends StatefulWidget {
@@ -98,6 +98,14 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                   pandal: pandals[i],
                   saved: true,
                   onSaved: () => widget.onSaved(i),
+                  onNavigate: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            FavouriteRouteMapScreen(pandal: pandals[i]),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
