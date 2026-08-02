@@ -1,34 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+
+import '../../controllers/pandal_controller.dart';
+import '../widgets/pandal_media_slider.dart';
 
 class PandalDetailScreen extends StatelessWidget {
   const PandalDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final pandalId = Get.parameters['id'] ?? '';
+    final controller = context.watch<PandalController>();
+    final pandal = controller.getPandalById(pandalId);
+    if (pandal == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: controller.isLoading
+              ? const CircularProgressIndicator()
+              : const Text('Pandal not found'),
+        ),
+      );
+    }
+    final heroImages = <String>[
+      if (pandal.thumbnailUrl.isNotEmpty) pandal.thumbnailUrl,
+    ];
+
     return Scaffold(
       body: Stack(
         children: [
           // Top Image Background Placeholder
-          Container(
+          SizedBox(
             height: 350,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFF941212), // Deep red representing the image
-            ),
-            child: const SafeArea(
-              child: Stack(
-                children: [
-                  // Decorative placeholder for the idol/pandal illustration
-                  Center(
-                    child: Icon(
-                      Icons.temple_hindu,
-                      color: Colors.white24,
-                      size: 150,
-                    ),
-                  ),
-                ],
-              ),
+            child: PandalMediaSlider(
+              images: heroImages,
+              videos: const [],
+              height: 350,
             ),
           ),
 
@@ -48,9 +57,9 @@ class PandalDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
-                    const Text(
-                      'Sreebhumi Sporting Club',
-                      style: TextStyle(
+                    Text(
+                      pandal.name,
+                      style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Serif',
@@ -64,9 +73,9 @@ class PandalDetailScreen extends StatelessWidget {
                       children: [
                         const Icon(Icons.star, color: Colors.orange, size: 20),
                         const SizedBox(width: 4),
-                        const Text(
-                          '4.8',
-                          style: TextStyle(
+                        Text(
+                          pandal.averageRating.toStringAsFixed(1),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF333333),
@@ -74,42 +83,43 @@ class PandalDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '(2.3K Ratings)',
+                          '(${pandal.totalReviews} Ratings)',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.orange.shade200),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.emoji_events,
-                                color: Colors.orange.shade700,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Top Rated',
-                                style: TextStyle(
+                        if (pandal.isFeatured)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.orange.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.emoji_events,
                                   color: Colors.orange.shade700,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                                  size: 16,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Top Rated',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -123,55 +133,22 @@ class PandalDetailScreen extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          'Lake Town, Kolkata, West Bengal',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Text(
+                            '${pandal.area} • ${pandal.address}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
 
-                    // Info Grid (Open, Crowd, Best Time)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildInfoCard(
-                            icon: Icons.circle,
-                            iconColor: Colors.green,
-                            title: 'Open',
-                            subtitle: 'Closes 11:30 PM',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildInfoCard(
-                            icon: Icons.people_alt_outlined,
-                            iconColor: Colors.grey.shade700,
-                            title: 'Crowd',
-                            subtitle: 'High',
-                            subtitleColor: const Color(0xFF941212),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildInfoCard(
-                            icon: Icons.access_time,
-                            iconColor: Colors.grey.shade700,
-                            title: 'Best Time',
-                            subtitle: '9 PM – 11 PM',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Highlights Section
                     const Text(
-                      'Highlights',
+                      'About',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -179,27 +156,105 @@ class PandalDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildHighlightsList(),
+                    Text(
+                      pandal.description,
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    if (pandal.images.isNotEmpty) ...[
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Photos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 145,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: pandal.images.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: SizedBox(
+                                width: 210,
+                                child: Image.network(
+                                  pandal.images[index],
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return const ColoredBox(
+                                      color: Color(0xFFFFE6BE),
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (_, _, _) => const ColoredBox(
+                                    color: Color(0xFFFFE6BE),
+                                    child: Icon(
+                                      Icons.broken_image_outlined,
+                                      size: 38,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                    if (pandal.videos.isNotEmpty) ...[
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Videos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: PandalMediaSlider(
+                          images: const [],
+                          videos: pandal.videos,
+                          height: 220,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 28),
 
                     // Address, Timings, Puja Time List
-                    _buildListTile(
-                      icon: Icons.map_outlined,
-                      title: 'Address',
-                      subtitle: 'Sreebhumi, Lake Town, Kolkata – 700048',
-                    ),
-                    _buildDivider(),
-                    _buildListTile(
-                      icon: Icons.schedule,
-                      title: 'Timings',
-                      subtitle: '9:00 AM – 11:30 PM (All Days)',
-                    ),
-                    _buildDivider(),
-                    _buildListTile(
-                      icon: Icons.notifications_active_outlined,
-                      title: 'Puja Time',
-                      subtitle: '7:00 AM, 11:00 AM, 4:00 PM, 8:00 PM',
-                    ),
+                    // _buildListTile(
+                    //   icon: Icons.map_outlined,
+                    //   title: 'Address',
+                    //   subtitle: pandal.address,
+                    // ),
+                    // _buildDivider(),
+                    // _buildListTile(
+                    //   icon: Icons.schedule,
+                    //   title: 'Timings',
+                    //   subtitle:
+                    //       '${pandal.openingTime.isEmpty ? 'Not specified' : pandal.openingTime} – ${pandal.closingTime.isEmpty ? 'Not specified' : pandal.closingTime}',
+                    // ),
+                    // _buildDivider(),
+                    // _buildListTile(
+                    //   icon: Icons.notifications_active_outlined,
+                    //   title: 'Coordinates',
+                    //   subtitle: '${pandal.latitude}, ${pandal.longitude}',
+                    // ),
 
                     // Extra space at bottom for the fixed action bar
                     const SizedBox(height: 80),

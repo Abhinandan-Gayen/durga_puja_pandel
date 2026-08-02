@@ -3,6 +3,7 @@ import 'package:durga_puja_pandel/views/Users/favourite_route_map_screen.dart';
 import 'package:durga_puja_pandel/views/widgets/pandel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
@@ -153,18 +154,21 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: PandalTile(
-                  pandal: tilePandal,
-                  saved: true,
-                  onSaved: () => widget.onSaved(index),
-                  onNavigate: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            FavouriteRouteMapScreen(pandal: tilePandal),
-                      ),
-                    );
-                  },
+                child: GestureDetector(
+                  onTap: () => Get.toNamed('/pandal/${firebasePandal.id}'),
+                  child: PandalTile(
+                    pandal: tilePandal,
+                    saved: true,
+                    onSaved: () => widget.onSaved(index),
+                    onNavigate: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              FavouriteRouteMapScreen(pandal: tilePandal),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               );
             }),
