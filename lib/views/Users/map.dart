@@ -149,7 +149,7 @@ class _CardScreenState extends State<CardScreen> {
             child: GoogleMap(
               initialCameraPosition: const CameraPosition(
                 target: _kolkata,
-                zoom: 12.3,
+                zoom: 11,
               ),
               mapType: _mapType,
               markers: _markers,
@@ -228,12 +228,12 @@ class _CardScreenState extends State<CardScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 28,
+            bottom: 70,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  height: 200,
+                  height: 185,
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: pandals.length,
