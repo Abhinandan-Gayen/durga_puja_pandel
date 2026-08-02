@@ -91,6 +91,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             );
           }),
+          SizedBox(height: 50),
         ],
       ),
     );
