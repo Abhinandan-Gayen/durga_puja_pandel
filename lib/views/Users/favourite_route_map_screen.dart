@@ -187,6 +187,8 @@ class _FavouriteRouteMapScreenState extends State<FavouriteRouteMapScreen> {
               isLoading: controller.isRouteLoading,
               duration: controller.routeDurationText,
               distance: controller.routeDistanceText,
+              walkingDuration: controller.walkingDurationText,
+              transitDuration: controller.transitDurationText,
               error: controller.errorMessage,
               onRetry: _loadRoute,
             ),
@@ -227,6 +229,8 @@ class _RouteStatusCard extends StatelessWidget {
     required this.isLoading,
     required this.duration,
     required this.distance,
+    required this.walkingDuration,
+    required this.transitDuration,
     required this.error,
     required this.onRetry,
   });
@@ -234,6 +238,8 @@ class _RouteStatusCard extends StatelessWidget {
   final bool isLoading;
   final String? duration;
   final String? distance;
+  final String? walkingDuration;
+  final String? transitDuration;
   final String? error;
   final VoidCallback onRetry;
 
@@ -292,42 +298,87 @@ class _RouteStatusCard extends StatelessWidget {
             )
           : Row(
               children: [
-                const CircleAvatar(
-                  backgroundColor: Color(0xFFFFECEC),
-                  child: Icon(
-                    Icons.directions_car_rounded,
-                    color: Color(0xFFB91419),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        duration ?? 'Route ready',
-                        style: const TextStyle(
-                          color: Color(0xFF29231F),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        distance ?? '',
-                        style: const TextStyle(color: Color(0xFF746B65)),
-                      ),
-                    ],
+                  child: _TravelTime(
+                    icon: Icons.directions_car_rounded,
+                    label: 'Driving',
+                    duration: duration ?? '--',
+                    detail: distance,
                   ),
                 ),
-                const Text(
-                  'Driving',
-                  style: TextStyle(
-                    color: Color(0xFFB91419),
-                    fontWeight: FontWeight.w700,
+                const _ModeDivider(),
+                Expanded(
+                  child: _TravelTime(
+                    icon: Icons.directions_walk_rounded,
+                    label: 'Walking',
+                    duration: walkingDuration ?? '--',
+                  ),
+                ),
+                const _ModeDivider(),
+                Expanded(
+                  child: _TravelTime(
+                    icon: Icons.train_rounded,
+                    label: 'Train',
+                    duration: transitDuration ?? '--',
                   ),
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _TravelTime extends StatelessWidget {
+  const _TravelTime({
+    required this.icon,
+    required this.label,
+    required this.duration,
+    this.detail,
+  });
+
+  final IconData icon;
+  final String label;
+  final String duration;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: const Color(0xFFB91419), size: 23),
+        const SizedBox(height: 5),
+        Text(
+          duration,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFF29231F),
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        Text(
+          detail == null || detail!.isEmpty ? label : '$label · $detail',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Color(0xFF746B65), fontSize: 10),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModeDivider extends StatelessWidget {
+  const _ModeDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 54,
+      margin: const EdgeInsets.symmetric(horizontal: 7),
+      color: const Color(0xFFE7D9D2),
     );
   }
 }

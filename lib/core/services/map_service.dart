@@ -28,6 +28,7 @@ class MapService {
     required double originLongitude,
     required double destinationLatitude,
     required double destinationLongitude,
+    String travelMode = 'DRIVE',
   }) async {
     final apiKey = await _loadApiKey();
     late http.Response response;
@@ -58,8 +59,8 @@ class MapService {
               },
             },
           },
-          'travelMode': 'DRIVE',
-          'routingPreference': 'TRAFFIC_AWARE',
+          'travelMode': travelMode,
+          if (travelMode == 'DRIVE') 'routingPreference': 'TRAFFIC_AWARE',
           'computeAlternativeRoutes': false,
           'languageCode': 'en-US',
           'units': 'METRIC',
@@ -71,6 +72,7 @@ class MapService {
         originLongitude: originLongitude,
         destinationLatitude: destinationLatitude,
         destinationLongitude: destinationLongitude,
+        travelMode: travelMode,
       );
     }
 
@@ -80,6 +82,7 @@ class MapService {
         originLongitude: originLongitude,
         destinationLatitude: destinationLatitude,
         destinationLongitude: destinationLongitude,
+        travelMode: travelMode,
       );
     }
 
@@ -91,6 +94,7 @@ class MapService {
         originLongitude: originLongitude,
         destinationLatitude: destinationLatitude,
         destinationLongitude: destinationLongitude,
+        travelMode: travelMode,
       );
     }
 
@@ -104,6 +108,7 @@ class MapService {
         originLongitude: originLongitude,
         destinationLatitude: destinationLatitude,
         destinationLongitude: destinationLongitude,
+        travelMode: travelMode,
       );
     }
 
@@ -121,6 +126,7 @@ class MapService {
     required double originLongitude,
     required double destinationLatitude,
     required double destinationLongitude,
+    String travelMode = 'DRIVE',
   }) async {
     final uri = Uri.https(
       'router.project-osrm.org',
@@ -146,10 +152,18 @@ class MapService {
       throw Exception('The road-routing service returned an empty route.');
     }
 
+    final distanceMeters = (route['distance'] as num?)?.round() ?? 0;
+    final drivingSeconds = (route['duration'] as num?)?.round() ?? 0;
+    final durationSeconds = switch (travelMode) {
+      'WALK' => (distanceMeters / 1.35).round(),
+      'TRANSIT' => (drivingSeconds * 1.35 + 600).round(),
+      _ => drivingSeconds,
+    };
+
     return MapRouteResult(
       points: _decodePolyline(geometry),
-      durationText: _formatDuration((route['duration'] as num?)?.round() ?? 0),
-      distanceText: _formatDistance((route['distance'] as num?)?.round() ?? 0),
+      durationText: _formatDuration(durationSeconds),
+      distanceText: _formatDistance(distanceMeters),
     );
   }
 

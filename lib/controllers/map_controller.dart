@@ -21,6 +21,8 @@ class MapController extends ChangeNotifier {
   String? routingDestinationId;
   String? routeDurationText;
   String? routeDistanceText;
+  String? walkingDurationText;
+  String? transitDurationText;
   List<LatLng> routePoints = [];
   Set<Polyline> routePolylines = {};
   String? errorMessage;
@@ -35,25 +37,46 @@ class MapController extends ChangeNotifier {
     routingDestinationId = destinationId;
     routeDurationText = null;
     routeDistanceText = null;
+    walkingDurationText = null;
+    transitDurationText = null;
     errorMessage = null;
     notifyListeners();
 
     try {
       currentPosition ??= await _locationService.getCurrentPosition();
       final origin = currentPosition!;
-      final route = await _mapService.computeRoute(
-        originLatitude: origin.latitude,
-        originLongitude: origin.longitude,
-        destinationLatitude: destinationLatitude,
-        destinationLongitude: destinationLongitude,
-      );
-      routePoints = route.points;
-      routeDurationText = route.durationText;
-      routeDistanceText = route.distanceText;
+      final routes = await Future.wait([
+        _mapService.computeRoute(
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          destinationLatitude: destinationLatitude,
+          destinationLongitude: destinationLongitude,
+        ),
+        _mapService.computeRoute(
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          destinationLatitude: destinationLatitude,
+          destinationLongitude: destinationLongitude,
+          travelMode: 'WALK',
+        ),
+        _mapService.computeRoute(
+          originLatitude: origin.latitude,
+          originLongitude: origin.longitude,
+          destinationLatitude: destinationLatitude,
+          destinationLongitude: destinationLongitude,
+          travelMode: 'TRANSIT',
+        ),
+      ]);
+      final drivingRoute = routes[0];
+      routePoints = drivingRoute.points;
+      routeDurationText = drivingRoute.durationText;
+      routeDistanceText = drivingRoute.distanceText;
+      walkingDurationText = routes[1].durationText;
+      transitDurationText = routes[2].durationText;
       routePolylines = {
         Polyline(
           polylineId: const PolylineId('active_direction_route'),
-          points: route.points,
+          points: drivingRoute.points,
           color: const Color(0xFF1565C0),
           width: 6,
           startCap: Cap.roundCap,
@@ -77,6 +100,8 @@ class MapController extends ChangeNotifier {
     routingDestinationId = null;
     routeDurationText = null;
     routeDistanceText = null;
+    walkingDurationText = null;
+    transitDurationText = null;
     routePoints = [];
     routePolylines = {};
     errorMessage = null;
