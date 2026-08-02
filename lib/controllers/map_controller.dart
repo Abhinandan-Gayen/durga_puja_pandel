@@ -77,7 +77,7 @@ class MapController extends ChangeNotifier {
         Polyline(
           polylineId: const PolylineId('active_direction_route'),
           points: drivingRoute.points,
-          color: const Color(0xFF1565C0),
+          color: const Color(0xFFE50914),
           width: 6,
           startCap: Cap.roundCap,
           endCap: Cap.roundCap,

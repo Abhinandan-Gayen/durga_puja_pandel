@@ -1,7 +1,11 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:durga_puja_pandel/controllers/map_controller.dart';
 import 'package:durga_puja_pandel/views/widgets/pandel.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class FavouriteRouteMapScreen extends StatefulWidget {
@@ -16,6 +20,7 @@ class FavouriteRouteMapScreen extends StatefulWidget {
 
 class _FavouriteRouteMapScreenState extends State<FavouriteRouteMapScreen> {
   GoogleMapController? _googleMapController;
+  BitmapDescriptor? _destinationMarkerIcon;
   bool _routeRequested = false;
 
   @override
@@ -23,7 +28,91 @@ class _FavouriteRouteMapScreenState extends State<FavouriteRouteMapScreen> {
     super.didChangeDependencies();
     if (_routeRequested) return;
     _routeRequested = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadRoute());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDestinationMarker();
+      _loadRoute();
+    });
+  }
+
+  Future<void> _loadDestinationMarker() async {
+    final imageUrl = widget.pandal.image.trim();
+    if (imageUrl.isEmpty) return;
+    try {
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode < 200 || response.statusCode >= 300) return;
+      final codec = await ui.instantiateImageCodec(
+        response.bodyBytes,
+        targetWidth: 160,
+        targetHeight: 160,
+      );
+      final frame = await codec.getNextFrame();
+      final markerBytes = await _paintImageMarker(frame.image);
+      if (!mounted) return;
+      setState(() {
+        _destinationMarkerIcon = BitmapDescriptor.bytes(
+          markerBytes,
+          width: 58,
+          height: 68,
+        );
+      });
+    } catch (_) {
+      // The default red Google Maps marker remains visible as the fallback.
+    }
+  }
+
+  Future<Uint8List> _paintImageMarker(ui.Image image) async {
+    const size = ui.Size(140, 164);
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    const center = Offset(70, 68);
+    const outerRadius = 62.0;
+    const imageRadius = 53.0;
+
+    final pinPath = Path()
+      ..moveTo(47, 112)
+      ..lineTo(70, 158)
+      ..lineTo(93, 112)
+      ..close();
+    canvas.drawPath(pinPath, Paint()..color = const Color(0xFFE50914));
+    canvas.drawCircle(
+      center,
+      outerRadius,
+      Paint()..color = const Color(0xFFE50914),
+    );
+    canvas.drawCircle(center, imageRadius + 3, Paint()..color = Colors.white);
+
+    canvas.save();
+    canvas.clipPath(
+      Path()..addOval(Rect.fromCircle(center: center, radius: imageRadius)),
+    );
+    final sourceWidth = image.width.toDouble();
+    final sourceHeight = image.height.toDouble();
+    final cropSize = sourceWidth < sourceHeight ? sourceWidth : sourceHeight;
+    final sourceRect = Rect.fromLTWH(
+      (sourceWidth - cropSize) / 2,
+      (sourceHeight - cropSize) / 2,
+      cropSize,
+      cropSize,
+    );
+    final destinationRect = Rect.fromCircle(
+      center: center,
+      radius: imageRadius,
+    );
+    canvas.drawImageRect(image, sourceRect, destinationRect, Paint());
+    canvas.restore();
+
+    final picture = recorder.endRecording();
+    final markerImage = await picture.toImage(
+      size.width.toInt(),
+      size.height.toInt(),
+    );
+    final byteData = await markerImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    if (byteData == null) {
+      throw StateError('Unable to create destination marker image.');
+    }
+    return byteData.buffer.asUint8List();
   }
 
   Future<void> _loadRoute() async {
@@ -90,7 +179,9 @@ class _FavouriteRouteMapScreenState extends State<FavouriteRouteMapScreen> {
           title: widget.pandal.en,
           snippet: widget.pandal.area,
         ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        icon:
+            _destinationMarkerIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       ),
       if (controller.currentPosition != null)
         Marker(
