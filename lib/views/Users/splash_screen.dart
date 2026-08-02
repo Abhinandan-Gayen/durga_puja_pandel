@@ -1,12 +1,6 @@
 import 'dart:async';
-
+import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/ui/bottom_naigation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-
-import '../../controllers/auth_controller.dart';
-import '../../core/constants/app_constants.dart';
-import '../../routes/route_names.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,81 +10,90 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  Timer? _fallback;
-  bool _hasNavigated = false;
-
   @override
   void initState() {
     super.initState();
-    final auth = context.read<AuthController>();
-
-    auth.addListener(_onAuthChanged);
-
-    _fallback = Timer(const Duration(seconds: 5), () {
-      if (!mounted || _hasNavigated) return;
-      _navigate(context.read<AuthController>(), forceOnboarding: true);
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _hasNavigated) return;
-      _navigate(context.read<AuthController>());
-    });
+    _goToHomeScreen();
   }
 
-  void _onAuthChanged() {
-    if (!mounted || _hasNavigated) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _hasNavigated) return;
-      _navigate(context.read<AuthController>());
-    });
-  }
+  Future<void> _goToHomeScreen() async {
+    await Future.delayed(const Duration(seconds: 2));
 
-  void _navigate(AuthController auth, {bool forceOnboarding = false}) {
-    if (_hasNavigated) return;
+    if (!mounted) return;
 
-    if (!forceOnboarding && !auth.isInitialized) return;
-
-    _hasNavigated = true;
-    _fallback?.cancel();
-    auth.removeListener(_onAuthChanged);
-
-    final target = forceOnboarding
-        ? RouteNames.onboarding
-        : auth.isLoggedIn
-            ? (auth.isAdmin ? RouteNames.adminDashboard : RouteNames.home)
-            : auth.hasSeenOnboarding
-                ? RouteNames.home
-                : RouteNames.onboarding;
-
-    context.goNamed(target);
-  }
-
-  @override
-  void dispose() {
-    _fallback?.cancel();
-    try {
-      context.read<AuthController>().removeListener(_onAuthChanged);
-    } catch (_) {}
-    super.dispose();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const AppShell()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.temple_hindu, size: 76),
-            const SizedBox(height: 16),
-            Text(
-              AppConstants.appName,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
-          ],
-        ),
+      backgroundColor: const Color(0xFFFFFAF1),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double availableHeight = constraints.maxHeight;
+          final bool isSmallWindow = availableHeight < 700;
+
+          final double loaderBottom = isSmallWindow
+              ? (availableHeight * 0.10).clamp(52.0, 75.0)
+              : 115.0;
+
+          final double versionBottom = isSmallWindow
+              ? (availableHeight * 0.035).clamp(18.0, 30.0)
+              : 30.0;
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/splash-screen.webp',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  filterQuality: FilterQuality.high,
+                ),
+              ),
+
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: loaderBottom,
+                child: const Center(
+                  child: SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: Color(0xFFB91419),
+                      backgroundColor: Color(0x26B91419),
+                    ),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: versionBottom,
+                child: SafeArea(
+                  top: false,
+                  child: Text(
+                    'V1.0.0',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
