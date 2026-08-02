@@ -34,7 +34,7 @@ class PandalController extends ChangeNotifier {
       (items) {
         pandals = items;
         activePandals = _activeFrom(items);
-        featuredPandals = _featuredFrom(activePandals);
+        featuredPandals = _featuredFrom(items);
         popularPandals = _popularFrom(activePandals);
         filteredPandals = activePandals;
         isLoading = false;
@@ -63,7 +63,7 @@ class PandalController extends ChangeNotifier {
   Future<void> fetchFeaturedPandals() async {
     await _run(() async {
       await _ensureActivePandalsLoaded();
-      featuredPandals = _featuredFrom(activePandals);
+      featuredPandals = _featuredFrom(pandals);
     });
   }
 

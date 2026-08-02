@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
+import '../../controllers/pandal_controller.dart';
+import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
+
 class CardScreen extends StatefulWidget {
   const CardScreen({super.key});
 
@@ -20,53 +23,7 @@ class _CardScreenState extends State<CardScreen> {
 
   int currentCardIndex = 0;
 
-  final List<Map<String, dynamic>> pandals = [
-    {
-      'title': 'Sreebhumi Sporting Club',
-      'location': 'Lake Town, Kolkata',
-      'distance': '5.2 km',
-      'rating': '4.8',
-      'ratingCount': '2.3K',
-      'crowd': 'High',
-      'status': 'Open',
-      'closingTime': 'Closes 11:30 PM',
-      'eta': '18 min',
-      'image':
-          'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?w=500',
-      'latitude': 22.6163,
-      'longitude': 88.4024,
-    },
-    {
-      'title': 'Suruchi Sangha',
-      'location': 'New Alipore, Kolkata',
-      'distance': '2.4 km',
-      'rating': '4.7',
-      'ratingCount': '1.8K',
-      'crowd': 'Moderate',
-      'status': 'Open',
-      'closingTime': 'Closes 12:00 AM',
-      'eta': '12 min',
-      'image':
-          'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=500',
-      'latitude': 22.5176,
-      'longitude': 88.3267,
-    },
-    {
-      'title': 'Santosh Mitra Square',
-      'location': 'Entally, Kolkata',
-      'distance': '3.8 km',
-      'rating': '4.9',
-      'ratingCount': '3.1K',
-      'crowd': 'Very High',
-      'status': 'Open',
-      'closingTime': 'Closes 1:00 AM',
-      'eta': '22 min',
-      'image':
-          'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=500',
-      'latitude': 22.5658,
-      'longitude': 88.3708,
-    },
-  ];
+  List<Map<String, dynamic>> pandals = [];
 
   @override
   void dispose() {
@@ -167,6 +124,37 @@ class _CardScreenState extends State<CardScreen> {
   @override
   Widget build(BuildContext context) {
     final routeController = context.watch<MapController>();
+    final firebasePandals = context.watch<PandalController>().pandals;
+    final shellController = context.watch<AppShellController>();
+    pandals = firebasePandals.where((pandal) => pandal.isActive).map((pandal) {
+      final imageUrl = pandal.thumbnailUrl.isNotEmpty
+          ? pandal.thumbnailUrl
+          : pandal.images.isNotEmpty
+          ? pandal.images.first
+          : '';
+      return <String, dynamic>{
+        'id': pandal.id,
+        'title': pandal.name,
+        'location': pandal.address.isNotEmpty
+            ? '${pandal.area}, ${pandal.address}'
+            : pandal.area,
+        'distance': '',
+        'rating': pandal.averageRating.toStringAsFixed(1),
+        'ratingCount': pandal.totalReviews.toString(),
+        'crowd': pandal.crowdLevel,
+        'status': 'Open',
+        'closingTime': pandal.closingTime.isEmpty
+            ? ''
+            : 'Closes ${pandal.closingTime}',
+        'eta': '',
+        'image': imageUrl,
+        'latitude': pandal.latitude,
+        'longitude': pandal.longitude,
+      };
+    }).toList();
+    if (pandals.isNotEmpty && currentCardIndex >= pandals.length) {
+      currentCardIndex = pandals.length - 1;
+    }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Color(0xFFE50914),
@@ -286,6 +274,11 @@ class _CardScreenState extends State<CardScreen> {
                       },
                       itemBuilder: (context, index) {
                         final pandal = pandals[index];
+                        final firebaseIndex = firebasePandals.indexWhere(
+                          (item) => item.id == pandal['id'],
+                        );
+                        final isFavorite = firebaseIndex >= 0 &&
+                            shellController.saved.contains(firebaseIndex);
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(
@@ -303,6 +296,7 @@ class _CardScreenState extends State<CardScreen> {
                             closingTime: pandal['closingTime'],
                             eta: pandal['eta'],
                             imageUrl: pandal['image'],
+                            isFavorite: isFavorite,
                             isDirectionLoading:
                                 routeController.isRouteLoading &&
                                 routeController.routingDestinationId ==
@@ -315,9 +309,9 @@ class _CardScreenState extends State<CardScreen> {
                                   ].whereType<String>().join(' • ')
                                 : null,
                             onFavourite: () {
-                              debugPrint(
-                                '${pandal['title']} favourite clicked',
-                              );
+                              if (firebaseIndex >= 0) {
+                                shellController.toggleSaved(firebaseIndex);
+                              }
                             },
                             onDirection: () {
                               _showDirections(pandal, index);
@@ -397,6 +391,7 @@ class MapPandalCard extends StatelessWidget {
   final String closingTime;
   final String eta;
   final String imageUrl;
+  final bool isFavorite;
   final bool isDirectionLoading;
   final String? directionSummary;
   final VoidCallback onFavourite;
@@ -414,6 +409,7 @@ class MapPandalCard extends StatelessWidget {
     required this.closingTime,
     required this.eta,
     required this.imageUrl,
+    this.isFavorite = false,
     this.isDirectionLoading = false,
     this.directionSummary,
     required this.onFavourite,
@@ -492,13 +488,13 @@ class MapPandalCard extends StatelessWidget {
                         InkWell(
                           onTap: onFavourite,
                           borderRadius: BorderRadius.circular(20),
-                          child: const Padding(
-                            padding: EdgeInsets.all(3),
-                            child: Image(
-                              image: AssetImage(
-                                "assets/bottom_navigation/Favorite_light@4x.png",
-                              ),
-                              height: 21,
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Icon(
+                              isFavorite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              size: 21,
                               color: primaryRed,
                             ),
                           ),
