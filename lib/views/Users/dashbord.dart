@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../controllers/pandal_controller.dart';
 import '../../core/services/location_service.dart';
 import '../../models/pandal_model.dart';
+import '../admin/location_picker_screen.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'location_pandals_screen.dart';
 
@@ -27,6 +28,8 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   String _searchQuery = '';
   String _currentLocationLabel = 'Detecting location...';
   bool _isLoadingLocation = false;
+  double _currentLatitude = 22.5726;
+  double _currentLongitude = 88.3639;
 
   final List<Map<String, dynamic>> categories = [
     {'icon': Icons.temple_hindu_outlined, 'title': 'Top\nPandals'},
@@ -79,6 +82,8 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       ].map((part) => part.trim()).toSet().toList();
       if (!mounted) return;
       setState(() {
+        _currentLatitude = position.latitude;
+        _currentLongitude = position.longitude;
         _currentLocationLabel = parts.isEmpty
             ? '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}'
             : parts.join(', ');
@@ -89,6 +94,81 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
     } finally {
       if (mounted) setState(() => _isLoadingLocation = false);
     }
+  }
+
+  Future<void> _showLocationOptions() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 22),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD6D2CF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Choose location',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                _LocationChoiceTile(
+                  icon: Icons.my_location_rounded,
+                  title: 'Use current location',
+                  subtitle: 'Update using your device GPS',
+                  onTap: () => Navigator.of(sheetContext).pop('current'),
+                ),
+                _LocationChoiceTile(
+                  icon: Icons.search_rounded,
+                  title: 'Search another location',
+                  subtitle: 'Choose an address, area, or city',
+                  onTap: () => Navigator.of(sheetContext).pop('search'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'current') {
+      await _loadCurrentLocation();
+      return;
+    }
+    final result = await Navigator.of(context).push<LocationPickerResult>(
+      MaterialPageRoute<LocationPickerResult>(
+        builder: (_) => LocationPickerScreen(
+          initialLatitude: _currentLatitude,
+          initialLongitude: _currentLongitude,
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    setState(() {
+      _currentLatitude = result.latitude;
+      _currentLongitude = result.longitude;
+      _currentLocationLabel = result.area?.trim().isNotEmpty == true
+          ? result.area!.trim()
+          : result.city?.trim().isNotEmpty == true
+          ? result.city!.trim()
+          : result.address?.trim().isNotEmpty == true
+          ? result.address!.trim()
+          : '${result.latitude.toStringAsFixed(4)}, ${result.longitude.toStringAsFixed(4)}';
+    });
   }
 
   @override
@@ -261,7 +341,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
   Widget _buildLocationButton() {
     return InkWell(
-      onTap: _loadCurrentLocation,
+      onTap: _showLocationOptions,
       borderRadius: BorderRadius.circular(30),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1052,6 +1132,45 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LocationChoiceTile extends StatelessWidget {
+  const _LocationChoiceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      onTap: onTap,
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: const BoxDecoration(
+          color: Color(0xFFEAF1FF),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Color(0xFF2878F0), size: 22),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF625C58)),
       ),
     );
   }
