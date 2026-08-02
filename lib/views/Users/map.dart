@@ -630,7 +630,7 @@ class MapPandalCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryRed,
                 elevation: 3,
-                shadowColor: primaryRed.withOpacity(0.35),
+                shadowColor: primaryRed.withValues(alpha: 0.35),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -745,12 +745,12 @@ class MapBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final roadPaint = Paint()
-      ..color = Colors.white.withOpacity(0.9)
+      ..color = Colors.white.withValues(alpha: 0.9)
       ..strokeWidth = 8
       ..style = PaintingStyle.stroke;
 
     final smallRoadPaint = Paint()
-      ..color = Colors.white.withOpacity(0.65)
+      ..color = Colors.white.withValues(alpha: 0.65)
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke;
 
