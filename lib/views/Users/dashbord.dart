@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../controllers/pandal_controller.dart';
 import '../../models/pandal_model.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
+import 'location_pandals_screen.dart';
 
 class DurgaPujaHomeScreen extends StatefulWidget {
   const DurgaPujaHomeScreen({super.key, required this.onMenuTap});
@@ -220,13 +221,15 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
   Widget _buildLocationButton() {
     final firebasePandals = context.watch<PandalController>().pandals;
-    final areas =
-        firebasePandals
-            .map((pandal) => pandal.area.trim())
-            .where((area) => area.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final areaByKey = <String, String>{};
+    for (final pandal in firebasePandals) {
+      final area = pandal.area.trim();
+      if (area.isNotEmpty) {
+        areaByKey.putIfAbsent(area.toLowerCase(), () => area);
+      }
+    }
+    final areas = areaByKey.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return PopupMenuButton<String>(
       tooltip: 'Select location',
@@ -367,7 +370,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   Widget _buildMainContent() {
     final pandalController = context.watch<PandalController>();
     final query = _searchQuery.trim().toLowerCase();
-    final displayedPandals = pandalController.pandals.where((pandal) {
+    final filteredPandals = pandalController.pandals.where((pandal) {
       final matchesLocation =
           _selectedArea == null ||
           pandal.area.toLowerCase() == _selectedArea!.toLowerCase();
@@ -380,6 +383,13 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           pandal.city.toLowerCase().contains(query) ||
           pandal.address.toLowerCase().contains(query) ||
           pandal.description.toLowerCase().contains(query);
+    });
+    final seenPandals = <String>{};
+    final displayedPandals = filteredPandals.where((pandal) {
+      final key =
+          '${pandal.name.trim().toLowerCase()}|'
+          '${pandal.area.trim().toLowerCase()}';
+      return seenPandals.add(key);
     }).toList();
     return Container(
       width: double.infinity,
@@ -416,10 +426,24 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                 : _selectedArea == null
                 ? 'Featured Pandals'
                 : '$_selectedArea Pandals',
-            onSeeAll: () {},
+            onSeeAll: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => LocationPandalsScreen(area: _selectedArea),
+                ),
+              );
+            },
           ),
           // const SizedBox(height: 12),
-          _buildFeaturedPandalsGrid(displayedPandals),
+          if (pandalController.isLoading && pandalController.pandals.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 70),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFFE50914)),
+              ),
+            )
+          else
+            _buildFeaturedPandalsGrid(displayedPandals),
 
           const SizedBox(height: 24),
 
