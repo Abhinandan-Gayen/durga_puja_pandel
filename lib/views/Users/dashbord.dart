@@ -456,150 +456,237 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       itemBuilder: (context, index) {
         final pandal = featuredPandals[index];
 
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x33000000),
-                    blurRadius: 16,
-                    spreadRadius: 1,
-                    offset: Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: Color(0x20FFD889),
-                    blurRadius: 12,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 16,
+                spreadRadius: 1,
+                offset: Offset(0, 8),
               ),
-              child: ClipPath(
-                clipper: PremiumWishlistCardClipper(),
-                child: Material(
-                  color: darkRed,
-                  child: InkWell(
-                    onTap: () {},
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 5,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.asset(
-                                pandal['image']!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Color(0xFFC06F39),
-                                          Color(0xFF5C2516),
-                                        ],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.temple_hindu_rounded,
-                                      color: Color(0xFFFFD889),
-                                      size: 48,
-                                    ),
-                                  );
-                                },
-                              ),
+              BoxShadow(
+                color: Color(0x18FFD889),
+                blurRadius: 12,
+                spreadRadius: 0,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Material(
+              color: darkRed,
+              child: InkWell(
+                onTap: () {},
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            "https://d34vm3j4h7f97z.cloudfront.net/original/4X/b/2/9/b29ad50aa12db216f75cce29857960bcb89fe546.jpeg",
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
 
-                              const DecoratedBox(
-                                decoration: BoxDecoration(
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+
+                              return Container(
+                                decoration: const BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      Color(0x08000000),
-                                      Colors.transparent,
-                                      Color(0x85000000),
+                                      Color(0xFFC06F39),
+                                      Color(0xFF5C2516),
                                     ],
-                                    stops: [0, 0.48, 1],
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                   ),
                                 ),
-                              ),
+                                alignment: Alignment.center,
+                                child: const CircularProgressIndicator(
+                                  color: Color(0xFFFFD889),
+                                  strokeWidth: 2.5,
+                                ),
+                              );
+                            },
 
-                              Positioned(
-                                top: 12,
-                                left: 12,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Color(0xFFC06F39),
+                                      Color(0xFF5C2516),
+                                    ],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.temple_hindu_rounded,
+                                  color: Color(0xFFFFD889),
+                                  size: 48,
+                                ),
+                              );
+                            },
+                          ),
+                          // Premium image overlay
+                          // const DecoratedBox(
+                          //   decoration: BoxDecoration(
+                          //     gradient: LinearGradient(
+                          //       colors: [
+                          //         Color(0x12000000),
+                          //         Colors.transparent,
+                          //         Color(0x7A000000),
+                          //       ],
+                          //       stops: [0.0, 0.48, 1.0],
+                          //       begin: Alignment.topCenter,
+                          //       end: Alignment.bottomCenter,
+                          //     ),
+                          //   ),
+                          // ),
+
+                          // Subtle golden top border
+                          Positioned(
+                            top: 0,
+                            left: 18,
+                            right: 18,
+                            child: Container(
+                              height: 2,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Color(0xFFFFD889),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Premium label
+                          // Positioned(
+                          //   top: 10,
+                          //   left: 10,
+                          //   child: Container(
+                          //     padding: const EdgeInsets.symmetric(
+                          //       horizontal: 9,
+                          //       vertical: 5,
+                          //     ),
+                          //     decoration: BoxDecoration(
+                          //       color: const Color(0xCC5C2516),
+                          //       borderRadius: BorderRadius.circular(20),
+                          //       border: Border.all(
+                          //         color: const Color(0x66FFD889),
+                          //         width: 0.8,
+                          //       ),
+                          //     ),
+                          //     child: const Row(
+                          //       mainAxisSize: MainAxisSize.min,
+                          //       children: [
+                          //         Icon(
+                          //           Icons.workspace_premium_rounded,
+                          //           color: Color(0xFFFFD889),
+                          //           size: 13,
+                          //         ),
+                          //         SizedBox(width: 4),
+                          //         Text(
+                          //           'FEATURED',
+                          //           style: TextStyle(
+                          //             color: Color(0xFFFFE2A6),
+                          //             fontSize: 8.5,
+                          //             fontWeight: FontWeight.w800,
+                          //             letterSpacing: 0.7,
+                          //           ),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ),
+                          // ),
+
+                          // Bookmark button
+                          Positioned(
+                            top: 9,
+                            right: 9,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {},
+                                customBorder: const CircleBorder(),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 9,
-                                    vertical: 5,
-                                  ),
+                                  width: 34,
+                                  height: 34,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xCC6B2A16),
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: const Color(0xCC542111),
+                                    shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: const Color(0x70FFD889),
-                                      width: 0.8,
+                                      color: const Color(0x66FFD889),
+                                      width: 1,
                                     ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.workspace_premium_rounded,
-                                        color: Color(0xFFFFD889),
-                                        size: 13,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'FEATURED',
-                                        style: TextStyle(
-                                          color: Color(0xFFFFE2A6),
-                                          fontSize: 8.5,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.6,
-                                        ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x40000000),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 3),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        Expanded(
-                          flex: 4,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Color(0xFFB31118), Color(0xFF8C1115)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  pandal['title']!,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14.5,
-                                    height: 1.08,
-                                    fontWeight: FontWeight.w800,
+                                  child: const Icon(
+                                    Icons.bookmark_border_rounded,
+                                    color: Color(0xFFFFE4B0),
+                                    size: 19,
                                   ),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                                const Spacer(),
+                    Expanded(
+                      flex: 4,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFB31118), Color(0xFF8C1115)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              pandal['title']!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                height: 1.08,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.1,
+                              ),
+                            ),
 
+                            const Spacer(),
+
+                            Row(
+                              children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 7,
@@ -634,83 +721,49 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                   ),
                                 ),
 
-                                const SizedBox(height: 8),
+                                const Spacer(),
 
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on_rounded,
-                                      color: Color(0xFFFFD2C1),
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        pandal['location']!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Color(0xFFFFD2C1),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Color(0xFFFFD2C1),
+                                  size: 17,
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
-            // Wishlist button
-            Positioned(
-              top: 1,
-              right: 1,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {},
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF783017), Color(0xFF43170D)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFFFD889),
-                        width: 1.4,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x55000000),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
+                            const SizedBox(height: 8),
+
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  color: Color(0xFFFFD2C1),
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    pandal['location']!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Color(0xFFFFD2C1),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        BoxShadow(color: Color(0x30FFD889), blurRadius: 8),
-                      ],
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.bookmark_border_rounded,
-                      color: Color(0xFFFFE4B0),
-                      size: 21,
-                    ),
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     );
@@ -862,7 +915,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 class PremiumWishlistCardClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    const double cardRadius = 20;
+    const double cardRadius = 10;
 
     final Path path = Path();
 
@@ -873,13 +926,13 @@ class PremiumWishlistCardClipper extends CustomClipper<Path> {
     path.lineTo(size.width - 64, 0);
 
     // 1. Smooth entry (টপ এজ থেকে কাটআউটের শুরু)
-    path.cubicTo(size.width - 54, 0, size.width - 50, 4, size.width - 50, 16);
+    path.cubicTo(size.width - 60, 0, size.width - 50, 4, size.width - 50, 16);
 
     // 2. Main shallow bowl (আসল কাটআউট - এখন অনেক স্মুথ এবং মাপে ছোট)
-    path.cubicTo(size.width - 50, 38, size.width - 38, 50, size.width - 16, 50);
+    path.cubicTo(size.width - 50, 45, size.width - 38, 52, size.width - 16, 51);
 
     // 3. Smooth exit (কাটআউট থেকে রাইট এজে মেশা)
-    path.cubicTo(size.width - 4, 50, size.width, 54, size.width, 64);
+    path.cubicTo(size.width - 10, 50, size.width, 54, size.width, 64);
 
     // Right edge
     path.lineTo(size.width, size.height - cardRadius);
