@@ -8,6 +8,7 @@ import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/google_drive_url_converter.dart';
 import '../../core/utils/snackbar_helper.dart';
 import '../../core/utils/validators.dart';
 import '../../models/pandal_model.dart';
@@ -40,6 +41,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   late final TextEditingController _descriptionController;
   late final TextEditingController _latitudeController;
   late final TextEditingController _longitudeController;
+  late final TextEditingController _otherCityController;
   late final TextEditingController _themeNameController;
   late final TextEditingController _organizerNameController;
   late final TextEditingController _openingTimeController;
@@ -93,9 +95,11 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _galleryUrlsController.addListener(_onMediaChanged);
     _videoUrlsController.addListener(_onMediaChanged);
 
-    _city = AppConstants.supportedCities.contains(pandal.city)
-        ? pandal.city
-        : AppConstants.supportedCities.first;
+    final hasSupportedCity = AppConstants.supportedCities.contains(pandal.city);
+    _city = hasSupportedCity ? pandal.city : 'Others';
+    _otherCityController = TextEditingController(
+      text: hasSupportedCity ? '' : pandal.city,
+    );
     _crowdLevel = AppConstants.crowdLevels.contains(pandal.crowdLevel)
         ? pandal.crowdLevel
         : AppConstants.crowdLevels.first;
@@ -133,6 +137,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     _descriptionController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
+    _otherCityController.dispose();
     _themeNameController.dispose();
     _organizerNameController.dispose();
     _openingTimeController.dispose();
@@ -199,6 +204,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     );
     if (match.isNotEmpty) {
       _city = match;
+      _otherCityController.clear();
+    } else {
+      _city = 'Others';
+      _otherCityController.text = cityName.trim();
     }
   }
 
@@ -210,7 +219,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
       _areaController.text = area;
     }
 
-    _setCityFromReverseGeocode(pm.administrativeArea ?? pm.locality);
+    _setCityFromReverseGeocode(pm.locality ?? pm.administrativeArea);
   }
 
   Future<void> _resolveCurrentLocation() async {
@@ -229,27 +238,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
         return;
       }
 
-      final granted = await locationService.requestLocationPermission();
-      if (!mounted) return;
-      if (!granted) {
-        SnackbarHelper.showError(context, 'Location permission denied.');
-        return;
-      }
-
-      Position? position;
-      try {
-        position = await locationService.getCurrentPosition().timeout(
-          const Duration(seconds: 15),
-        );
-      } catch (_) {
-        if (mounted) {
-          SnackbarHelper.showError(
-            context,
-            'Unable to fetch current location. Please try again.',
-          );
-        }
-        return;
-      }
+      final position = await locationService.getCurrentPosition();
       if (!mounted) return;
 
       List<Placemark> placemarks;
@@ -285,13 +274,19 @@ class _PandalFormScreenState extends State<PandalFormScreen>
 
       setState(() {
         _locationPreview = LocationPickerResult(
-          latitude: position!.latitude,
+          latitude: position.latitude,
           longitude: position.longitude,
           area: _areaController.text,
           city: _city,
           address: _addressController.text,
         );
       });
+      if (mounted) {
+        SnackbarHelper.showSuccess(
+          context,
+          'Current location added successfully.',
+        );
+      }
     } catch (e) {
       if (mounted) {
         SnackbarHelper.showError(
@@ -341,14 +336,19 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final thumbnailUrl = _thumbnailUrlController.text.trim();
-    if (thumbnailUrl.isEmpty) {
+    final rawThumbnailUrl = _thumbnailUrlController.text.trim();
+    if (rawThumbnailUrl.isEmpty) {
       SnackbarHelper.showError(context, 'Thumbnail image URL is required');
       return;
     }
 
-    final images = _parseUrls(_galleryUrlsController.text);
-    final videos = _parseUrls(_videoUrlsController.text);
+    final thumbnailUrl = convertGoogleDriveUrl(rawThumbnailUrl);
+    final images = _parseUrls(
+      _galleryUrlsController.text,
+    ).map(convertGoogleDriveUrl).toList();
+    final videos = _parseUrls(
+      _videoUrlsController.text,
+    ).map(convertGoogleDriveVideoUrl).toList();
 
     if (videos.length > 2) {
       SnackbarHelper.showError(context, 'Maximum 2 video URLs are allowed');
@@ -362,7 +362,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     final uid = context.read<AuthController>().firebaseUser?.uid ?? '';
     final pandal = initial.copyWith(
       name: _nameController.text.trim(),
-      city: _city,
+      city: _city == 'Others' ? _otherCityController.text.trim() : _city,
       area: _areaController.text.trim(),
       address: _addressController.text.trim(),
       description: _descriptionController.text.trim(),
@@ -386,7 +386,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     final admin = context.read<AdminPandalController>();
     try {
       if (initial.id.isEmpty) {
-        await admin.addPandal(pandal);
+        final createdId = await admin.addPandal(pandal);
+        if (createdId == null) {
+          throw StateError(admin.errorMessage ?? 'Pandal could not be created');
+        }
       } else {
         await admin.updatePandal(pandal);
       }
@@ -550,7 +553,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Pandal' : 'New Pandal'),
+        title: Text(isEditing ? 'Edit Pandal' : 'New Pandel'),
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: gradientColors.first,
@@ -628,24 +631,35 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                               icon: Icons.location_on_outlined,
                               children: [
                                 _buildLocationActions(),
-                                _buildLocationPreview(),
-                                _Field(
-                                  _areaController,
-                                  'Area',
-                                  Icons.place_outlined,
-                                  validator: (v) =>
-                                      Validators.required(v, 'Area'),
-                                ),
+                                // _buildLocationPreview(),
+                                // _Field(
+                                //   _areaController,
+                                //   'Area',
+                                //   Icons.place_outlined,
+                                //   validator: (v) =>
+                                //       Validators.required(v, 'Area'),
+                                // ),
                                 _sep(16),
                                 _Dropdown<String>(
                                   value: _city,
-                                  label: 'City',
+                                  label: 'Area',
                                   icon: Icons.location_city_rounded,
                                   items: AppConstants.supportedCities,
                                   display: (c) => c,
                                   onChanged: (v) =>
                                       setState(() => _city = v ?? _city),
                                 ),
+                                if (_city == 'Others') ...[
+                                  _sep(12),
+                                  _Field(
+                                    _otherCityController,
+                                    'Enter Other Area',
+                                    Icons.edit_location_alt_outlined,
+                                    hint: 'Type area or city name',
+                                    validator: (v) =>
+                                        Validators.required(v, 'Other area'),
+                                  ),
+                                ],
                                 _sep(16),
                                 _Field(
                                   _addressController,
@@ -664,6 +678,7 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                         Icons.swap_vert_rounded,
                                         keyboardType: TextInputType.number,
                                         validator: Validators.latitude,
+                                        readOnly: true,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -674,131 +689,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
                                         Icons.swap_horiz_rounded,
                                         keyboardType: TextInputType.number,
                                         validator: Validators.longitude,
+                                        readOnly: true,
                                       ),
                                     ),
                                   ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          _sep(16),
-
-                          _animateIn(
-                            2,
-                            _SectionCard(
-                              title: 'Event Details',
-                              icon: Icons.auto_awesome_rounded,
-                              children: [
-                                _Field(
-                                  _themeNameController,
-                                  'Theme Name',
-                                  Icons.palette_outlined,
-                                  validator: (v) =>
-                                      Validators.required(v, 'Theme name'),
-                                ),
-                                _sep(16),
-                                _Field(
-                                  _organizerNameController,
-                                  'Organizer',
-                                  Icons.people_outline_rounded,
-                                  validator: (v) =>
-                                      Validators.required(v, 'Organizer name'),
-                                ),
-                                _sep(16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _Field(
-                                        _openingTimeController,
-                                        'Opens',
-                                        Icons.sunny,
-                                        hint: '6:00 AM',
-                                        validator: (v) => Validators.required(
-                                          v,
-                                          'Opening time',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _Field(
-                                        _closingTimeController,
-                                        'Closes',
-                                        Icons.nights_stay_rounded,
-                                        hint: '11:00 PM',
-                                        validator: (v) => Validators.required(
-                                          v,
-                                          'Closing time',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                _sep(16),
-                                _Field(
-                                  _entryFeeController,
-                                  'Entry Fee',
-                                  Icons.currency_rupee_rounded,
-                                  keyboardType: TextInputType.number,
-                                  hint: '0 = free',
-                                  validator: (v) =>
-                                      Validators.nonNegativeNumber(
-                                        v,
-                                        'Entry fee',
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          _sep(16),
-
-                          _animateIn(
-                            3,
-                            _SectionCard(
-                              title: 'Settings',
-                              icon: Icons.tune_rounded,
-                              children: [
-                                _CrowdSelector(
-                                  selected: _crowdLevel,
-                                  onChanged: (v) =>
-                                      setState(() => _crowdLevel = v),
-                                ),
-                                _sep(18),
-                                _Field(
-                                  _nearbyTransportController,
-                                  'Nearby Transport',
-                                  Icons.directions_bus_rounded,
-                                  maxLines: 3,
-                                  hint: 'One per line',
-                                  validator: (v) => Validators.required(
-                                    v,
-                                    'Nearby transport',
-                                  ),
-                                ),
-                                _sep(4),
-                                const Divider(),
-                                _sep(4),
-                                _SettingToggle(
-                                  Icons.local_parking_rounded,
-                                  'Parking Available',
-                                  _parkingAvailable,
-                                  (v) => setState(() => _parkingAvailable = v),
-                                ),
-                                _SettingToggle(
-                                  Icons.star_rounded,
-                                  'Featured Pandal',
-                                  _isFeatured,
-                                  (v) => setState(() => _isFeatured = v),
-                                  sub: 'Shown in featured section on home',
-                                ),
-                                _SettingToggle(
-                                  Icons.visibility_rounded,
-                                  'Active Listing',
-                                  _isActive,
-                                  (v) => setState(() => _isActive = v),
-                                  sub: 'Visible to all users',
                                 ),
                               ],
                             ),
@@ -1104,6 +998,7 @@ class _Field extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
+    this.readOnly = false,
   }) : minLines = null;
 
   final TextEditingController controller;
@@ -1114,6 +1009,7 @@ class _Field extends StatelessWidget {
   final TextInputType? keyboardType;
   final int maxLines;
   final int? minLines;
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1121,6 +1017,8 @@ class _Field extends StatelessWidget {
       controller: controller,
       validator: validator,
       keyboardType: keyboardType,
+      readOnly: readOnly,
+      showCursor: !readOnly,
       maxLines: maxLines,
       minLines: minLines,
       style: TextStyle(
@@ -1143,6 +1041,15 @@ class _Field extends StatelessWidget {
           ),
           child: Icon(icon, size: 20, color: AppColors.deepRed),
         ),
+        suffixIcon: readOnly
+            ? const Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: AppColors.deepRed,
+              )
+            : null,
+        filled: readOnly,
+        fillColor: readOnly ? AppColors.deepRed.withValues(alpha: 0.035) : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(

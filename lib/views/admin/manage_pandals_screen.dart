@@ -117,6 +117,9 @@ class _AdminPandalTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final admin = context.read<AdminPandalController>();
+    final isUpdatingActive = admin.isUpdatingActive(pandal.id);
+    final isUpdatingFeatured = admin.isUpdatingFeatured(pandal.id);
+    final isUpdatingStatus = isUpdatingActive || isUpdatingFeatured;
 
     return Card(
       child: Padding(
@@ -124,6 +127,31 @@ class _AdminPandalTile extends StatelessWidget {
         child: Column(
           children: [
             ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox.square(
+                  dimension: 58,
+                  child: pandal.thumbnailUrl.trim().isEmpty
+                      ? _thumbnailFallback(context)
+                      : Image.network(
+                          pandal.thumbnailUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              _thumbnailFallback(context),
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ),
               title: Text(pandal.name),
               subtitle: Text('${pandal.area}, ${pandal.city}'),
               trailing: Wrap(
@@ -148,17 +176,41 @@ class _AdminPandalTile extends StatelessWidget {
             SwitchListTile(
               value: pandal.isActive,
               title: Text(pandal.isActive ? 'Active' : 'Inactive'),
-              secondary: const Icon(Icons.power_settings_new),
-              onChanged: (_) => admin.toggleActiveStatus(pandal),
+              secondary: isUpdatingActive
+                  ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.power_settings_new),
+              onChanged: isUpdatingStatus
+                  ? null
+                  : (value) => admin.toggleActiveStatus(pandal, value),
             ),
             SwitchListTile(
               value: pandal.isFeatured,
               title: Text(pandal.isFeatured ? 'Featured' : 'Not featured'),
-              secondary: const Icon(Icons.star_border),
-              onChanged: (_) => admin.toggleFeaturedStatus(pandal),
+              secondary: isUpdatingFeatured
+                  ? const SizedBox.square(
+                      dimension: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.star_border),
+              onChanged: isUpdatingStatus
+                  ? null
+                  : (value) => admin.toggleFeaturedStatus(pandal, value),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _thumbnailFallback(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Icon(
+        Icons.temple_hindu_rounded,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }

@@ -23,6 +23,87 @@ class MapRouteResult {
 class MapService {
   String? _apiKey;
 
+  Future<List<String>> placeSuggestions({
+    required String query,
+    double? latitude,
+    double? longitude,
+  }) async {
+    if (query.trim().length < 2) return const [];
+    try {
+      final apiKey = await _loadApiKey();
+      final response = await http.post(
+        Uri.parse('https://places.googleapis.com/v1/places:autocomplete'),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'suggestions.placePrediction.text.text',
+        },
+        body: jsonEncode({
+          'input': query.trim(),
+          'includedRegionCodes': ['in'],
+          'languageCode': 'en',
+          if (latitude != null && longitude != null)
+            'locationBias': {
+              'circle': {
+                'center': {'latitude': latitude, 'longitude': longitude},
+                'radius': 50000.0,
+              },
+            },
+        }),
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final suggestions = data['suggestions'] as List<dynamic>? ?? const [];
+        final result = suggestions
+            .map((item) {
+              final suggestion = item as Map<String, dynamic>;
+              final prediction =
+                  suggestion['placePrediction'] as Map<String, dynamic>?;
+              return (prediction?['text'] as Map<String, dynamic>?)?['text']
+                  as String?;
+            })
+            .whereType<String>()
+            .where((value) => value.trim().isNotEmpty)
+            .take(5)
+            .toList();
+        if (result.isNotEmpty) return result;
+      }
+    } catch (_) {
+      // Fall through to the location-search fallback below.
+    }
+    return _fallbackPlaceSuggestions(query);
+  }
+
+  Future<List<String>> _fallbackPlaceSuggestions(String query) async {
+    try {
+      final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
+        'format': 'jsonv2',
+        'q': query.trim(),
+        'countrycodes': 'in',
+        'addressdetails': '1',
+        'limit': '5',
+      });
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'DurgaPujaPandalGuide/1.0'},
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return const [];
+      }
+      final data = jsonDecode(response.body) as List<dynamic>;
+      return data
+          .map(
+            (item) => (item as Map<String, dynamic>)['display_name'] as String?,
+          )
+          .whereType<String>()
+          .where((value) => value.trim().isNotEmpty)
+          .take(5)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<MapRouteResult> computeRoute({
     required double originLatitude,
     required double originLongitude,

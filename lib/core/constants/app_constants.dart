@@ -13,6 +13,10 @@ class AppConstants {
     'Mumbai',
     'Bengaluru',
     'Pune',
+    'Digha',
+    'Ramnagar',
+    'Contai',
+    'Others',
   ];
 
   static const crowdLevels = ['low', 'medium', 'high'];

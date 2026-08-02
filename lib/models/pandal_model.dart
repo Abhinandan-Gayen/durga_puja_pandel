@@ -98,7 +98,7 @@ class PandalModel {
       name: map['name'] as String? ?? '',
       description: map['description'] as String? ?? '',
       area: map['area'] as String? ?? '',
-      city: map['city'] as String? ?? 'Kolkata',
+      city: map['city'] as String? ?? map['area'] as String? ?? 'Kolkata',
       address: map['address'] as String? ?? '',
       latitude: (map['latitude'] as num?)?.toDouble() ?? 22.5726,
       longitude: (map['longitude'] as num?)?.toDouble() ?? 88.3639,

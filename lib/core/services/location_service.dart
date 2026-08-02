@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart' as permissions;
 
@@ -40,12 +42,7 @@ class LocationService {
 
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      final granted = await requestLocationPermission();
-      if (!granted) {
-        permission = await Geolocator.requestPermission();
-      } else {
-        permission = await Geolocator.checkPermission();
-      }
+      permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.denied) {
       throw Exception('Location permission was denied.');
@@ -54,8 +51,29 @@ class LocationService {
       throw Exception('Location permission is permanently denied.');
     }
 
-    return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-    );
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 25),
+        ),
+      );
+    } on TimeoutException {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
+
+      try {
+        return await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 15),
+          ),
+        );
+      } on TimeoutException {
+        throw Exception(
+          'Location timed out. Turn on GPS and move near a window, then try again.',
+        );
+      }
+    }
   }
 }
