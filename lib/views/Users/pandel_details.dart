@@ -229,12 +229,32 @@ class PandalDetailScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: PandalMediaSlider(
-                          images: const [],
-                          videos: pandal.videos,
-                          height: 220,
+                      SizedBox(
+                        height: 130,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: pandal.videos.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final videoUrl = pandal.videos[index];
+                            return GestureDetector(
+                              onTap: () => _showVideoPreview(context, videoUrl),
+                              child: Container(
+                                width: 210,
+                                decoration: BoxDecoration(
+                                  color: Colors.black87,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.play_circle_fill_rounded,
+                                    color: Colors.white,
+                                    size: 62,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -357,6 +377,43 @@ class PandalDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showVideoPreview(BuildContext context, String videoUrl) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (dialogContext) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: PandalVideoPlayer(
+                    url: videoUrl,
+                    autoPlay: true,
+                    fit: BoxFit.contain,
                   ),
                 ),
                 Positioned(

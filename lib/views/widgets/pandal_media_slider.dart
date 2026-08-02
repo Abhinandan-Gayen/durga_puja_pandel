@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -49,9 +51,15 @@ class PandalMediaSlider extends StatelessWidget {
 }
 
 class _VideoPreview extends StatefulWidget {
-  const _VideoPreview({required this.url});
+  const _VideoPreview({
+    required this.url,
+    this.autoPlay = false,
+    this.fit = BoxFit.cover,
+  });
 
   final String url;
+  final bool autoPlay;
+  final BoxFit fit;
 
   @override
   State<_VideoPreview> createState() => _VideoPreviewState();
@@ -60,21 +68,49 @@ class _VideoPreview extends StatefulWidget {
 class _VideoPreviewState extends State<_VideoPreview> {
   late final VideoPlayerController _controller;
   bool _isReady = false;
+  bool _showControls = true;
+  Timer? _controlsTimer;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-      ..initialize().then((_) {
-        if (!mounted) {
-          return;
-        }
-        setState(() => _isReady = true);
-      });
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller.initialize().then((_) async {
+      if (widget.autoPlay) {
+        await _controller.play();
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isReady = true);
+      _hideControlsAfterDelay();
+    });
+  }
+
+  void _hideControlsAfterDelay() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showControls = false);
+    });
+  }
+
+  void _handleVideoTap() {
+    if (!_showControls) {
+      setState(() => _showControls = true);
+      _hideControlsAfterDelay();
+      return;
+    }
+
+    setState(() {
+      _controller.value.isPlaying ? _controller.pause() : _controller.play();
+      _showControls = true;
+    });
+    _hideControlsAfterDelay();
   }
 
   @override
   void dispose() {
+    _controlsTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -92,7 +128,7 @@ class _VideoPreviewState extends State<_VideoPreview> {
       fit: StackFit.expand,
       children: [
         FittedBox(
-          fit: BoxFit.cover,
+          fit: widget.fit,
           child: SizedBox(
             width: _controller.value.size.width,
             height: _controller.value.size.height,
@@ -100,29 +136,49 @@ class _VideoPreviewState extends State<_VideoPreview> {
           ),
         ),
         Positioned.fill(
-          child: Material(
-            color: Colors.black26,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _controller.value.isPlaying
-                      ? _controller.pause()
-                      : _controller.play();
-                });
-              },
-              child: Center(
-                child: Icon(
-                  _controller.value.isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_fill,
-                  color: Colors.white,
-                  size: 64,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _handleVideoTap,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1 : 0,
+              duration: const Duration(milliseconds: 220),
+              child: ColoredBox(
+                color: Colors.black26,
+                child: Center(
+                  child: Icon(
+                    _controller.value.isPlaying
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_fill,
+                    color: Colors.white,
+                    size: 64,
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class PandalVideoPlayer extends StatelessWidget {
+  const PandalVideoPlayer({
+    super.key,
+    required this.url,
+    this.autoPlay = true,
+    this.fit = BoxFit.contain,
+  });
+
+  final String url;
+  final bool autoPlay;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Colors.black,
+      child: _VideoPreview(url: url, autoPlay: autoPlay, fit: fit),
     );
   }
 }
