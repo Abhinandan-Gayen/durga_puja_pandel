@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CardScreen extends StatefulWidget {
   const CardScreen({super.key});
@@ -9,6 +12,11 @@ class CardScreen extends StatefulWidget {
 
 class _CardScreenState extends State<CardScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.88);
+  GoogleMapController? _mapController;
+
+  static const LatLng _kolkata = LatLng(22.5726, 88.3639);
+  MapType _mapType = MapType.normal;
+  bool _myLocationEnabled = false;
 
   int currentCardIndex = 0;
 
@@ -25,6 +33,8 @@ class _CardScreenState extends State<CardScreen> {
       'eta': '18 min',
       'image':
           'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?w=500',
+      'latitude': 22.6163,
+      'longitude': 88.4024,
     },
     {
       'title': 'Suruchi Sangha',
@@ -38,6 +48,8 @@ class _CardScreenState extends State<CardScreen> {
       'eta': '12 min',
       'image':
           'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=500',
+      'latitude': 22.5176,
+      'longitude': 88.3267,
     },
     {
       'title': 'Santosh Mitra Square',
@@ -51,13 +63,80 @@ class _CardScreenState extends State<CardScreen> {
       'eta': '22 min',
       'image':
           'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=500',
+      'latitude': 22.5658,
+      'longitude': 88.3708,
     },
   ];
 
   @override
   void dispose() {
+    _mapController?.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Set<Marker> get _markers => pandals.asMap().entries.map((entry) {
+    final pandal = entry.value;
+    return Marker(
+      markerId: MarkerId('pandal_${entry.key}'),
+      position: LatLng(pandal['latitude'], pandal['longitude']),
+      infoWindow: InfoWindow(
+        title: pandal['title'],
+        snippet: pandal['location'],
+      ),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      onTap: () {
+        _pageController.animateToPage(
+          entry.key,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      },
+    );
+  }).toSet();
+
+  Future<void> _goToCurrentLocation() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      _showMessage('Please enable location services.');
+      return;
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      _showMessage('Location permission is required.');
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition();
+    if (!mounted) return;
+    setState(() => _myLocationEnabled = true);
+    await _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        LatLng(position.latitude, position.longitude),
+        15,
+      ),
+    );
+  }
+
+  Future<void> _openDirections(Map<String, dynamic> pandal) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination='
+      '${pandal['latitude']},${pandal['longitude']}',
+    );
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      _showMessage('Unable to open directions.');
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -65,35 +144,24 @@ class _CardScreenState extends State<CardScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ================= MAP BACKGROUND =================
+          // ================= REAL GOOGLE MAP =================
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/map_background.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: const Color(0xFFF3EBDD),
-                  child: CustomPaint(painter: MapBackgroundPainter()),
-                );
-              },
+            child: GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: _kolkata,
+                zoom: 12.3,
+              ),
+              mapType: _mapType,
+              markers: _markers,
+              myLocationEnabled: _myLocationEnabled,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              compassEnabled: false,
+              mapToolbarEnabled: false,
+              padding: const EdgeInsets.only(top: 68, bottom: 245),
+              onMapCreated: (controller) => _mapController = controller,
             ),
           ),
-
-          // ================= MAP ROUTE =================
-          Positioned.fill(
-            child: IgnorePointer(child: CustomPaint(painter: RoutePainter())),
-          ),
-
-          // ================= MAP MARKERS =================
-          const Positioned(top: 130, left: 65, child: MapMarker()),
-
-          const Positioned(top: 180, right: 60, child: MapMarker()),
-
-          const Positioned(top: 250, left: 125, child: MapMarker()),
-
-          const Positioned(top: 330, right: 85, child: MapMarker()),
-
-          const Positioned(top: 390, left: 80, child: CurrentLocationMarker()),
 
           // ================= TOP APP BAR =================
           Positioned(
@@ -117,16 +185,7 @@ class _CardScreenState extends State<CardScreen> {
                 ),
                 child: Row(
                   children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.of(context).maybePop();
-                      },
-                      icon: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: Colors.white,
-                      ),
-                    ),
-
+                  
                     const Expanded(
                       child: Text(
                         'Map & Locations',
@@ -139,15 +198,7 @@ class _CardScreenState extends State<CardScreen> {
                       ),
                     ),
 
-                    IconButton(
-                      onPressed: () {
-                        debugPrint('Filter clicked');
-                      },
-                      icon: const Icon(
-                        Icons.filter_alt_outlined,
-                        color: Colors.white,
-                      ),
-                    ),
+                   
                   ],
                 ),
               ),
@@ -162,18 +213,18 @@ class _CardScreenState extends State<CardScreen> {
               children: [
                 _buildMapActionButton(
                   icon: Icons.my_location_rounded,
-                  onTap: () {
-                    debugPrint('Current location clicked');
-                  },
+                  onTap: _goToCurrentLocation,
                 ),
 
                 const SizedBox(height: 10),
 
                 _buildMapActionButton(
                   icon: Icons.layers_outlined,
-                  onTap: () {
-                    debugPrint('Map layer clicked');
-                  },
+                  onTap: () => setState(() {
+                    _mapType = _mapType == MapType.normal
+                        ? MapType.hybrid
+                        : MapType.normal;
+                  }),
                 ),
               ],
             ),
@@ -197,6 +248,12 @@ class _CardScreenState extends State<CardScreen> {
                       setState(() {
                         currentCardIndex = value;
                       });
+                      final pandal = pandals[value];
+                      _mapController?.animateCamera(
+                        CameraUpdate.newLatLng(
+                          LatLng(pandal['latitude'], pandal['longitude']),
+                        ),
+                      );
                     },
                     itemBuilder: (context, index) {
                       final pandal = pandals[index];
@@ -221,7 +278,7 @@ class _CardScreenState extends State<CardScreen> {
                             debugPrint('${pandal['title']} favourite clicked');
                           },
                           onDirection: () {
-                            debugPrint('${pandal['title']} direction clicked');
+                            _openDirections(pandal);
                           },
                         ),
                       );
