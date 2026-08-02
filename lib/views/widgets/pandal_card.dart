@@ -55,27 +55,35 @@ class _PandalCardState extends State<PandalCard>
         ? null
         : widget.pandal.images.first;
 
-    return ScaleTransition(
-      scale: _fadeScale,
-      child: FadeTransition(
-        opacity: _fadeScale,
-        child: Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Get.toNamed('/pandal/${widget.pandal.id}'),
-            child: widget.compact
-                ? _CompactContent(
-                    pandal: widget.pandal,
-                    imageUrl: imageUrl,
-                    distanceKm: widget.distanceKm,
-                    isPremium: widget.isPremium,
-                  )
-                : _FullContent(
-                    pandal: widget.pandal,
-                    imageUrl: imageUrl,
-                    distanceKm: widget.distanceKm,
-                    isPremium: widget.isPremium,
-                  ),
+    return Opacity(
+      opacity: widget.pandal.isActive ? 1 : 0.42,
+      child: IgnorePointer(
+        ignoring: !widget.pandal.isActive,
+        child: ScaleTransition(
+          scale: _fadeScale,
+          child: FadeTransition(
+            opacity: _fadeScale,
+            child: Card(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: widget.pandal.isActive
+                    ? () => Get.toNamed('/pandal/${widget.pandal.id}')
+                    : null,
+                child: widget.compact
+                    ? _CompactContent(
+                        pandal: widget.pandal,
+                        imageUrl: imageUrl,
+                        distanceKm: widget.distanceKm,
+                        isPremium: widget.isPremium,
+                      )
+                    : _FullContent(
+                        pandal: widget.pandal,
+                        imageUrl: imageUrl,
+                        distanceKm: widget.distanceKm,
+                        isPremium: widget.isPremium,
+                      ),
+              ),
+            ),
           ),
         ),
       ),
@@ -274,6 +282,10 @@ class _PandalDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final location = pandal.city.isEmpty ||
+            pandal.city.toLowerCase() == pandal.area.toLowerCase()
+        ? pandal.area
+        : '${pandal.area}, ${pandal.city}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,7 +297,7 @@ class _PandalDetails extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          '${pandal.area}, ${pandal.city}',
+          location,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.bodySmall,
