@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
+import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'favourite_route_map_screen.dart';
 import '../widgets/pandel.dart';
 import '../widgets/pandal_media_slider.dart';
@@ -28,6 +29,15 @@ class PandalDetailScreen extends StatelessWidget {
     final heroImages = <String>[
       if (pandal.thumbnailUrl.isNotEmpty) pandal.thumbnailUrl,
     ];
+    final shellController = context.watch<AppShellController>();
+    final pandalIndex = controller.pandals.indexWhere(
+      (item) => item.id == pandal.id,
+    );
+    final isFavorite =
+        pandalIndex >= 0 && shellController.saved.contains(pandalIndex);
+    void toggleFavorite() {
+      if (pandalIndex >= 0) shellController.toggleSaved(pandalIndex);
+    }
 
     return Scaffold(
       body: Stack(
@@ -330,24 +340,11 @@ class PandalDetailScreen extends StatelessWidget {
                       },
                     ),
 
-                    Row(
-                      children: [
-                        _buildTopActionButton(
-                          icon: Icons.bookmark_border_rounded,
-                          onTap: () {
-                            debugPrint('BOOKMARK BUTTON CLICKED');
-                          },
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        _buildTopActionButton(
-                          icon: Icons.share_outlined,
-                          onTap: () {
-                            debugPrint('SHARE BUTTON CLICKED');
-                          },
-                        ),
-                      ],
+                    _buildTopActionButton(
+                      icon: isFavorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      onTap: toggleFavorite,
                     ),
                   ],
                 ),
@@ -381,6 +378,8 @@ class PandalDetailScreen extends StatelessWidget {
             ),
           );
         },
+        onFavorite: toggleFavorite,
+        isFavorite: isFavorite,
       ),
     );
   }
@@ -640,7 +639,11 @@ class PandalDetailScreen extends StatelessWidget {
   }
 
   // The fixed bottom action bar
-  Widget _buildBottomActionBar({required VoidCallback onNavigate}) {
+  Widget _buildBottomActionBar({
+    required VoidCallback onNavigate,
+    required VoidCallback onFavorite,
+    required bool isFavorite,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -683,42 +686,16 @@ class PandalDetailScreen extends StatelessWidget {
             Expanded(
               flex: 4,
               child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.bookmark_border,
+                onPressed: onFavorite,
+                icon: Icon(
+                  isFavorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
                   color: Color(0xFF941212),
                   size: 18,
                 ),
-                label: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF941212),
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF941212), width: 1.2),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 4,
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.share_outlined,
-                  color: Color(0xFF941212),
-                  size: 18,
-                ),
-                label: const Text(
-                  'Share',
+                label: Text(
+                  isFavorite ? 'Saved' : 'Save',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
