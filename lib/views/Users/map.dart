@@ -168,39 +168,33 @@ class _CardScreenState extends State<CardScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 58,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFB91419),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x26000000),
-                      blurRadius: 8,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                  
-                    const Expanded(
-                      child: Text(
-                        'Map & Locations',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                        ),
+            child: Container(
+              height: 58,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFB91419),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x26000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Map & Locations',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-
-                   
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

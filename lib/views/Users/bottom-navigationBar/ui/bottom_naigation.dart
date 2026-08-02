@@ -2,7 +2,9 @@ import 'package:durga_puja_pandel/views/Users/Explore.dart';
 import 'package:durga_puja_pandel/views/Users/dashbord.dart';
 import 'package:durga_puja_pandel/views/Users/favoutiry.dart';
 import 'package:durga_puja_pandel/views/Users/map.dart';
+import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -11,16 +13,16 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int index = 0;
-  final saved = <int>{0, 2};
-
   @override
   Widget build(BuildContext context) {
+    final shellController = context.watch<AppShellController>();
+    final index = shellController.selectedIndex;
+    final saved = shellController.saved;
     final screens = [
       const DurgaPujaHomeScreen(),
-      ExploreScreen(saved: saved, onSaved: _toggleSaved),
+      ExploreScreen(saved: saved, onSaved: shellController.toggleSaved),
       const CardScreen(),
-      FavouritesScreen(saved: saved, onSaved: _toggleSaved),
+      FavouritesScreen(saved: saved, onSaved: shellController.toggleSaved),
     ];
     return Scaffold(
       extendBody: true, // Allows screen content to roll behind the floating bar
@@ -29,38 +31,17 @@ class _AppShellState extends State<AppShell> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 320),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0.04, 0),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
-                    child: child,
-                  ),
-                );
-              },
-              child: ClipRect(key: ValueKey<int>(index), child: screens[index]),
-            ),
+            child: IndexedStack(index: index, children: screens),
           ),
         ),
       ),
-      bottomNavigationBar: _buildCustomBottomNavBar(),
+      bottomNavigationBar: _buildCustomBottomNavBar(shellController),
     );
   }
 
-  Widget _buildCustomBottomNavBar() {
+  Widget _buildCustomBottomNavBar(AppShellController shellController) {
+    final index = shellController.selectedIndex;
+    final saved = shellController.saved;
     final items = [
       {
         'image': "assets/bottom_navigation/Home_duotone@4x.png",
@@ -100,7 +81,7 @@ class _AppShellState extends State<AppShell> {
 
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -121,7 +102,7 @@ class _AppShellState extends State<AppShell> {
                   height: 44,
                   margin: const EdgeInsets.symmetric(horizontal: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDFAC36).withOpacity(0.12),
+                    color: const Color(0xFFDFAC36).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
@@ -134,11 +115,7 @@ class _AppShellState extends State<AppShell> {
                   return Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        setState(() {
-                          index = i;
-                        });
-                      },
+                      onTap: () => shellController.setIndex(i),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -202,8 +179,4 @@ class _AppShellState extends State<AppShell> {
       ),
     );
   }
-
-  void _toggleSaved(int value) => setState(() {
-    saved.contains(value) ? saved.remove(value) : saved.add(value);
-  });
 }

@@ -73,9 +73,7 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
         Provider<LocationService>.value(value: locationService),
         Provider<MapService>.value(value: mapService),
         ChangeNotifierProvider<ThemeController>.value(value: _themeController),
-        ChangeNotifierProvider(
-          create: (_) => AuthController(authService, firestoreService),
-        ),
+        ChangeNotifierProvider<AuthController>.value(value: authController),
         ChangeNotifierProvider(
           create: (_) => PandalController(firestoreService)..watchPandals(),
         ),
@@ -104,10 +102,8 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
         ),
         ChangeNotifierProvider(create: (_) => AppShellController()),
       ],
-      child: Consumer2<AuthController, ThemeController>(
-        builder: (context, authController, themeController, _) {
-          final router = AppRoutes.createRouter(authController);
-
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
           return MaterialApp.router(
             title: 'Pujo Pandal Guide',
             debugShowCheckedModeBanner: false,
