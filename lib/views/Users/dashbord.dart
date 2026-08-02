@@ -500,7 +500,14 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             onSeeAll: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const LocationPandalsScreen(),
+                  builder: (_) => LocationPandalsScreen(
+                    userLatitude: _hasSelectedLocation
+                        ? _currentLatitude
+                        : null,
+                    userLongitude: _hasSelectedLocation
+                        ? _currentLongitude
+                        : null,
+                  ),
                 ),
               );
             },

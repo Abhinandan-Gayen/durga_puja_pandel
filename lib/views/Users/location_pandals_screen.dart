@@ -3,28 +3,31 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/pandal_controller.dart';
+import '../../core/utils/distance_helper.dart';
 import '../../models/pandal_model.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 
 class LocationPandalsScreen extends StatelessWidget {
-  const LocationPandalsScreen({super.key, this.area});
+  const LocationPandalsScreen({
+    super.key,
+    this.area,
+    this.userLatitude,
+    this.userLongitude,
+  });
 
   final String? area;
+  final double? userLatitude;
+  final double? userLongitude;
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<PandalController>();
     final shellController = context.watch<AppShellController>();
     final normalizedArea = area?.trim().toLowerCase();
-    final filteredPandals = controller.pandals.where((pandal) {
+    final pandals = controller.pandals.where((pandal) {
+      if (!pandal.isFeatured) return false;
       if (normalizedArea == null || normalizedArea.isEmpty) return true;
       return pandal.area.trim().toLowerCase() == normalizedArea;
-    });
-    final seenPandals = <String>{};
-    final pandals = filteredPandals.where((pandal) {
-      final key = '${pandal.name.trim().toLowerCase()}|'
-          '${pandal.area.trim().toLowerCase()}';
-      return seenPandals.add(key);
     }).toList();
 
     return Scaffold(
@@ -34,7 +37,7 @@ class LocationPandalsScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         centerTitle: true,
         title: Text(
-          area == null ? 'All Pandals' : '$area Pandals',
+          area == null ? 'Featured Pandals' : '$area Featured Pandals',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
         ),
       ),
@@ -58,7 +61,8 @@ class LocationPandalsScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                mainAxisExtent: 300,
+                // mainAxisExtent: 300,
+                childAspectRatio: 0.70,
               ),
               itemCount: pandals.length,
               itemBuilder: (context, index) {
@@ -66,9 +70,24 @@ class LocationPandalsScreen extends StatelessWidget {
                 final firebaseIndex = controller.pandals.indexWhere(
                   (item) => item.id == pandal.id,
                 );
+                final distanceKm = userLatitude == null || userLongitude == null
+                    ? null
+                    : DistanceHelper.calculateDistanceInKm(
+                        userLatitude!,
+                        userLongitude!,
+                        pandal.latitude,
+                        pandal.longitude,
+                      );
+                final distanceText = distanceKm == null
+                    ? null
+                    : distanceKm < 1
+                    ? '${(distanceKm * 1000).round()} m away'
+                    : '${distanceKm.toStringAsFixed(1)} km away';
                 return _DashboardStylePandalCard(
                   pandal: pandal,
-                  isFavorite: firebaseIndex >= 0 &&
+                  distanceText: distanceText,
+                  isFavorite:
+                      firebaseIndex >= 0 &&
                       shellController.saved.contains(firebaseIndex),
                   onFavorite: firebaseIndex < 0
                       ? null
@@ -83,11 +102,13 @@ class LocationPandalsScreen extends StatelessWidget {
 class _DashboardStylePandalCard extends StatelessWidget {
   const _DashboardStylePandalCard({
     required this.pandal,
+    required this.distanceText,
     required this.isFavorite,
     required this.onFavorite,
   });
 
   final PandalModel pandal;
+  final String? distanceText;
   final bool isFavorite;
   final VoidCallback? onFavorite;
 
@@ -216,7 +237,32 @@ class _DashboardStylePandalCard extends StatelessWidget {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const Spacer(),
+                            if (distanceText != null) ...[
+                              const SizedBox(height: 7),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.near_me_rounded,
+                                    color: Color(0xFFFFD2C1),
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      distanceText!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFD2C1),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+
                             Row(
                               children: [
                                 const Icon(
