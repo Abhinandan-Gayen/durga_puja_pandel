@@ -8,6 +8,7 @@ import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/google_drive_url_converter.dart';
 import '../../core/utils/snackbar_helper.dart';
 import '../../core/utils/validators.dart';
 import '../../models/pandal_model.dart';
@@ -335,14 +336,19 @@ class _PandalFormScreenState extends State<PandalFormScreen>
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final thumbnailUrl = _thumbnailUrlController.text.trim();
-    if (thumbnailUrl.isEmpty) {
+    final rawThumbnailUrl = _thumbnailUrlController.text.trim();
+    if (rawThumbnailUrl.isEmpty) {
       SnackbarHelper.showError(context, 'Thumbnail image URL is required');
       return;
     }
 
-    final images = _parseUrls(_galleryUrlsController.text);
-    final videos = _parseUrls(_videoUrlsController.text);
+    final thumbnailUrl = convertGoogleDriveUrl(rawThumbnailUrl);
+    final images = _parseUrls(
+      _galleryUrlsController.text,
+    ).map(convertGoogleDriveUrl).toList();
+    final videos = _parseUrls(
+      _videoUrlsController.text,
+    ).map(convertGoogleDriveVideoUrl).toList();
 
     if (videos.length > 2) {
       SnackbarHelper.showError(context, 'Maximum 2 video URLs are allowed');
@@ -380,7 +386,10 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     final admin = context.read<AdminPandalController>();
     try {
       if (initial.id.isEmpty) {
-        await admin.addPandal(pandal);
+        final createdId = await admin.addPandal(pandal);
+        if (createdId == null) {
+          throw StateError(admin.errorMessage ?? 'Pandal could not be created');
+        }
       } else {
         await admin.updatePandal(pandal);
       }
