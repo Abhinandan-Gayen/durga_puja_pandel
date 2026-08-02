@@ -7,6 +7,17 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val envFile = rootProject.file("../.env")
+val mapsApiKey = if (envFile.exists()) {
+    envFile.readLines()
+        .firstOrNull { it.trim().startsWith("apikey=") }
+        ?.substringAfter("=")
+        ?.trim()
+        .orEmpty()
+} else {
+    ""
+}
+
 android {
     namespace = "com.example.durga_puja_pandel"
     compileSdk = 36
@@ -26,6 +37,7 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

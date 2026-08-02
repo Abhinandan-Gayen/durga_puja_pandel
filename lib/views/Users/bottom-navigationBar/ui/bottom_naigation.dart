@@ -1,131 +1,209 @@
 import 'package:durga_puja_pandel/views/Users/Explore.dart';
-import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:durga_puja_pandel/views/Users/dashbord.dart';
 import 'package:durga_puja_pandel/views/Users/favoutiry.dart';
 import 'package:durga_puja_pandel/views/Users/map.dart';
-import 'package:durga_puja_pandel/views/Users/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends StatefulWidget {
   const AppShell({super.key});
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
 
-  static const Color primaryRed = Color(0xFFB91419);
+class _AppShellState extends State<AppShell> {
+  int index = 0;
+  final saved = <int>{0, 2};
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppShellController>(
-      builder: (context, controller, child) {
-        final screens = [
-          DurgaPujaHomeScreen(),
-          ExploreScreen(
-            saved: controller.saved,
-            onSaved: controller.toggleSaved,
-          ),
-          const CardScreen(),
-          FavouritesScreen(
-            saved: controller.saved,
-            onSaved: controller.toggleSaved,
-          ),
-          const ProfileScreen(),
-        ];
-
-        return Scaffold(
-          body: SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: IndexedStack(
-                  index: controller.selectedIndex,
-                  children: screens,
-                ),
-              ),
+    final screens = [
+      const DurgaPujaHomeScreen(),
+      ExploreScreen(saved: saved, onSaved: _toggleSaved),
+      const CardScreen(),
+      FavouritesScreen(saved: saved, onSaved: _toggleSaved),
+    ];
+    return Scaffold(
+      extendBody: true, // Allows screen content to roll behind the floating bar
+      body: SafeArea(
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 320),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0.04, 0),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
+                    child: child,
+                  ),
+                );
+              },
+              child: ClipRect(key: ValueKey<int>(index), child: screens[index]),
             ),
           ),
-          bottomNavigationBar: _buildBottomNavigation(controller),
-        );
-      },
+        ),
+      ),
+      bottomNavigationBar: _buildCustomBottomNavBar(),
     );
   }
 
-  Widget _buildBottomNavigation(AppShellController controller) {
-    final List<Map<String, dynamic>> items = [
+  Widget _buildCustomBottomNavBar() {
+    final items = [
       {
-        'icon': Icons.home_outlined,
-        'selectedIcon': Icons.home,
-        'title': 'Home',
+        'image': "assets/bottom_navigation/Home_duotone@4x.png",
+        'activeimage': "assets/bottom_navigation/Home_fill.png",
+        'label': 'Home',
       },
       {
-        'icon': Icons.near_me_outlined,
-        'selectedIcon': Icons.near_me,
-        'title': 'Nearby',
-      },
-      {'icon': Icons.map_outlined, 'selectedIcon': Icons.map, 'title': 'Map'},
-      {
-        'icon': Icons.favorite_border_rounded,
-        'selectedIcon': Icons.favorite_rounded,
-        'title': 'Saved',
+        'image': "assets/bottom_navigation/Compass@4x.png",
+        'activeimage': "assets/bottom_navigation/Compass_fill@4x.png",
+        'label': 'Explore',
       },
       {
-        'icon': Icons.person_outline,
-        'selectedIcon': Icons.person,
-        'title': 'Profile',
+        'image': "assets/bottom_navigation/Map.png",
+        'activeimage': "assets/bottom_navigation/Map_fill.png",
+        'label': 'Map',
+      },
+      {
+        'image': "assets/bottom_navigation/Favorite.png",
+        'activeimage': "assets/bottom_navigation/Favorite_fill@4x.png",
+        'label': 'Saved',
       },
     ];
 
-    return Container(
-      height: 62,
-      margin: const EdgeInsets.fromLTRB(8, 0, 8, 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF5),
-        borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: const Color(0xFFECDCC9), width: 0.8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x25000000),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          final bool isSelected = controller.selectedIndex == index;
+    final double width = MediaQuery.of(context).size.width;
+    final double barWidth = width > 520 ? 520 : width;
 
-          return Expanded(
-            child: InkWell(
-              onTap: () {
-                controller.setIndex(index);
-              },
-              borderRadius: BorderRadius.circular(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isSelected
-                        ? item['selectedIcon'] as IconData
-                        : item['icon'] as IconData,
-                    color: isSelected ? primaryRed : const Color(0xFF746B66),
-                    size: 20,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    item['title'] as String,
-                    style: TextStyle(
-                      color: isSelected ? primaryRed : const Color(0xFF554D48),
-                      fontSize: 8,
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ],
+    return Center(
+      heightFactor: 1,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Container(
+          height: 68,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+          decoration: BoxDecoration(
+            color: Colors.white, // Deep rich maroon black
+            borderRadius: BorderRadius.circular(24),
+
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-            ),
-          );
-        }),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Sliding Active Indicator Background Pill
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutBack,
+                alignment: Alignment(
+                  -1.0 + (index * (2.0 / (items.length - 1))),
+                  0.0,
+                ),
+                child: Container(
+                  width: (barWidth - 32) / items.length - 14,
+                  height: 44,
+                  margin: const EdgeInsets.symmetric(horizontal: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDFAC36).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              // Tab Items Row
+              Row(
+                children: List.generate(items.length, (i) {
+                  final item = items[i];
+                  final bool isSelected = index == i;
+                  return Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          index = i;
+                        });
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedScale(
+                            duration: const Duration(milliseconds: 250),
+                            scale: isSelected ? 1.2 : 1.0,
+                            curve: Curves.easeOutBack,
+                            child: i == 3
+                                ? Badge(
+                                    isLabelVisible: saved.isNotEmpty,
+                                    label: Text(
+                                      '${saved.length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                      ),
+                                    ),
+                                    backgroundColor: const Color(0xFF9F1013),
+                                    child: Image.asset(
+                                      isSelected
+                                          ? item['activeimage'] as String
+                                          : item['image'] as String,
+                                      width: 25,
+                                      height: 25,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    isSelected
+                                        ? item['activeimage'] as String
+                                        : item['image'] as String,
+                                    width: 25,
+                                    height: 25,
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                          const SizedBox(height: 4),
+                          AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 200),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFFDFAC36)
+                                  : Colors.black,
+                              letterSpacing: 0.2,
+                            ),
+                            child: Text(item['label'] as String),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  void _toggleSaved(int value) => setState(() {
+    saved.contains(value) ? saved.remove(value) : saved.add(value);
+  });
 }
