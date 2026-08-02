@@ -30,48 +30,68 @@ class MapService {
     required double destinationLongitude,
   }) async {
     final apiKey = await _loadApiKey();
-    final response = await http.post(
-      Uri.parse('https://routes.googleapis.com/directions/v2:computeRoutes'),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask':
-            'routes.duration,routes.distanceMeters,'
-            'routes.polyline.encodedPolyline',
-      },
-      body: jsonEncode({
-        'origin': {
-          'location': {
-            'latLng': {
-              'latitude': originLatitude,
-              'longitude': originLongitude,
+    late http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('https://routes.googleapis.com/directions/v2:computeRoutes'),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask':
+              'routes.duration,routes.distanceMeters,'
+              'routes.polyline.encodedPolyline',
+        },
+        body: jsonEncode({
+          'origin': {
+            'location': {
+              'latLng': {
+                'latitude': originLatitude,
+                'longitude': originLongitude,
+              },
             },
           },
-        },
-        'destination': {
-          'location': {
-            'latLng': {
-              'latitude': destinationLatitude,
-              'longitude': destinationLongitude,
+          'destination': {
+            'location': {
+              'latLng': {
+                'latitude': destinationLatitude,
+                'longitude': destinationLongitude,
+              },
             },
           },
-        },
-        'travelMode': 'DRIVE',
-        'routingPreference': 'TRAFFIC_AWARE',
-        'computeAlternativeRoutes': false,
-        'languageCode': 'en-US',
-        'units': 'METRIC',
-      }),
-    );
+          'travelMode': 'DRIVE',
+          'routingPreference': 'TRAFFIC_AWARE',
+          'computeAlternativeRoutes': false,
+          'languageCode': 'en-US',
+          'units': 'METRIC',
+        }),
+      );
+    } catch (_) {
+      return _computeFallbackRoute(
+        originLatitude: originLatitude,
+        originLongitude: originLongitude,
+        destinationLatitude: destinationLatitude,
+        destinationLongitude: destinationLongitude,
+      );
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Google could not calculate this route.');
+      return _computeFallbackRoute(
+        originLatitude: originLatitude,
+        originLongitude: originLongitude,
+        destinationLatitude: destinationLatitude,
+        destinationLongitude: destinationLongitude,
+      );
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final routes = data['routes'] as List<dynamic>? ?? const [];
     if (routes.isEmpty) {
-      throw Exception('No road route was found.');
+      return _computeFallbackRoute(
+        originLatitude: originLatitude,
+        originLongitude: originLongitude,
+        destinationLatitude: destinationLatitude,
+        destinationLongitude: destinationLongitude,
+      );
     }
 
     final route = routes.first as Map<String, dynamic>;
@@ -79,7 +99,12 @@ class MapService {
         (route['polyline'] as Map<String, dynamic>?)?['encodedPolyline']
             as String?;
     if (encodedPolyline == null || encodedPolyline.isEmpty) {
-      throw Exception('Google returned an empty route.');
+      return _computeFallbackRoute(
+        originLatitude: originLatitude,
+        originLongitude: originLongitude,
+        destinationLatitude: destinationLatitude,
+        destinationLongitude: destinationLongitude,
+      );
     }
 
     final durationSeconds = _durationSeconds(route['duration'] as String?);
@@ -88,6 +113,43 @@ class MapService {
       points: _decodePolyline(encodedPolyline),
       durationText: _formatDuration(durationSeconds),
       distanceText: _formatDistance(distanceMeters),
+    );
+  }
+
+  Future<MapRouteResult> _computeFallbackRoute({
+    required double originLatitude,
+    required double originLongitude,
+    required double destinationLatitude,
+    required double destinationLongitude,
+  }) async {
+    final uri = Uri.https(
+      'router.project-osrm.org',
+      '/route/v1/driving/'
+          '$originLongitude,$originLatitude;'
+          '$destinationLongitude,$destinationLatitude',
+      {'overview': 'full', 'geometries': 'polyline', 'steps': 'false'},
+    );
+    final response = await http.get(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Unable to calculate a road route right now.');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final routes = data['routes'] as List<dynamic>? ?? const [];
+    if (routes.isEmpty) {
+      throw Exception('No drivable road route was found.');
+    }
+
+    final route = routes.first as Map<String, dynamic>;
+    final geometry = route['geometry'] as String?;
+    if (geometry == null || geometry.isEmpty) {
+      throw Exception('The road-routing service returned an empty route.');
+    }
+
+    return MapRouteResult(
+      points: _decodePolyline(geometry),
+      durationText: _formatDuration((route['duration'] as num?)?.round() ?? 0),
+      distanceText: _formatDistance((route['distance'] as num?)?.round() ?? 0),
     );
   }
 
