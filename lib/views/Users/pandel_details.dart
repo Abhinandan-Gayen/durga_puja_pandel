@@ -341,7 +341,7 @@ class PandalDetailScreen extends StatelessWidget {
                     border: Border.all(color: Colors.orange.shade100),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.withOpacity(0.04),
+                        color: Colors.orange.withValues(alpha: 0.04),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -435,7 +435,7 @@ class PandalDetailScreen extends StatelessWidget {
         color: const Color(0xFFFAF6F0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -534,7 +534,7 @@ class PandalDetailScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.black.withOpacity(0.35),
+      color: Colors.black.withValues(alpha: 0.35),
       shape: const CircleBorder(),
       elevation: 1,
       child: InkWell(

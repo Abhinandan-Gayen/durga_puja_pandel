@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class DurgaPujaHomeScreen extends StatefulWidget {
   const DurgaPujaHomeScreen({super.key});
@@ -67,102 +68,141 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: creamColor,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Transform.translate(
-                      offset: const Offset(
-                        0,
-                        -15,
-                      ), // একটু উপরে তুলে প্রিমিয়াম লুক দেওয়া হয়েছে
-                      child: _buildMainContent(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFFD71319),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
-  }
-
-  // =========================================================
-  // HEADER
-  // =========================================================
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        35,
-      ), // প্যাডিং বাড়ানো হয়েছে
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFD71319), Color(0xFFAA080D)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _buildHeaderIcon(icon: Icons.menu_rounded, onTap: () {}),
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    'Durga Puja Pandal',
-                    style: TextStyle(
-                      color: Color(0xFFFFD17B),
-                      fontSize: 20, // ফন্ট সাইজ বাড়ানো হয়েছে
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'serif',
-                    ),
-                  ),
-                ),
-              ),
-              _buildHeaderIcon(
-                icon: Icons.notifications_none_rounded,
-                onTap: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildLocationButton(),
-          const SizedBox(height: 16),
-          _buildSearchBar(),
+    return Scaffold(
+      backgroundColor: primaryRed,
+      body: CustomScrollView(
+        slivers: [
+          _buildPremiumSliverAppBar(),
+          SliverToBoxAdapter(child: _buildMainContent()),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderIcon({
+  // =========================================================
+  // PREMIUM SLIVER APP BAR
+  // =========================================================
+
+  Widget _buildPremiumSliverAppBar() {
+    const double expandedHeight = 220;
+    const double collapsedHeight = 72;
+
+    return SliverAppBar(
+      pinned: true,
+      floating: false,
+      snap: false,
+      stretch: true,
+      expandedHeight: expandedHeight,
+      collapsedHeight: collapsedHeight,
+      toolbarHeight: collapsedHeight,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: primaryRed,
+      surfaceTintColor: Colors.transparent,
+      automaticallyImplyLeading: false,
+      leadingWidth: 64,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 12),
+        child: _buildAppBarCircleButton(icon: Icons.menu_rounded, onTap: () {}),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: _buildAppBarCircleButton(
+            icon: Icons.notifications_none_rounded,
+            onTap: () {},
+          ),
+        ),
+      ],
+      centerTitle: true,
+      title: const Text(
+        'Durga Puja Pandal',
+        style: TextStyle(
+          color: Color(0xFFFFD17B),
+          fontSize: 19,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'serif',
+        ),
+      ),
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          final double currentHeight = constraints.biggest.height;
+          final double progress =
+              ((currentHeight - collapsedHeight) /
+                      (expandedHeight - collapsedHeight))
+                  .clamp(0.0, 1.0);
+
+          return FlexibleSpaceBar(
+            collapseMode: CollapseMode.parallax,
+            background: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFD71319), Color(0xFFAA080D)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 78, 16, 28),
+                  child: IgnorePointer(
+                    ignoring: progress < 0.35,
+                    child: Opacity(
+                      opacity: progress,
+                      child: Transform.translate(
+                        offset: Offset(0, 12 * (1 - progress)),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _buildLocationButton(),
+                            const SizedBox(height: 14),
+                            _buildSearchBar(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAppBarCircleButton({
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 28,
-        ), // আইকন সাইজ বড় করা হয়েছে
+    return Center(
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.14),
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+        ),
       ),
     );
   }
@@ -227,7 +267,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         ],
       ),
       child: TextField(
-        cursorColor: primaryRed,
+        cursorColor: const Color.fromARGB(255, 216, 113, 117),
         style: const TextStyle(color: Color(0xFF333333), fontSize: 15),
         decoration: InputDecoration(
           hintText: 'Search pandals, areas, events...',
@@ -236,7 +276,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           prefixIcon: const Icon(
             Icons.search_rounded,
             color: primaryRed,
-            size: 24, // আইকন বড় করা হয়েছে
+            size: 24,
           ),
           suffixIconConstraints: const BoxConstraints(minWidth: 50),
           suffixIcon: IconButton(
@@ -260,38 +300,36 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   Widget _buildMainContent() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        20,
-        16,
-        24,
-      ), // প্যাডিং স্ট্যান্ডার্ড করা হয়েছে
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.sizeOf(context).height - 170,
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 26, 16, 30),
       decoration: const BoxDecoration(
-        color: creamColor,
+        color: Color(0xFFFFF8E9),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(25),
-          topRight: Radius.circular(25),
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x15000000),
-            blurRadius: 10,
-            offset: Offset(0, -4),
+            color: Color(0x26000000),
+            blurRadius: 24,
+            spreadRadius: 1,
+            offset: Offset(0, -8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(title: 'Top Categories', onSeeAll: () {}),
-          const SizedBox(height: 12),
-          _buildCategories(),
-
-          const SizedBox(height: 24),
-
+          // const SizedBox(height: 20),
+          // _buildSectionHeader(title: 'Top Categories', onSeeAll: () {}),
+          // const SizedBox(height: 12),
+          // _buildCategories(),
+          // const SizedBox(height: 15),
           _buildSectionHeader(title: 'Featured Pandals', onSeeAll: () {}),
           const SizedBox(height: 12),
-          _buildFeaturedPandalsGrid(), // গ্রিড ভিউ মেথড কল করা হয়েছে
+          _buildFeaturedPandalsGrid(),
 
           const SizedBox(height: 24),
 
@@ -412,149 +450,267 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.65,
       ),
       itemCount: featuredPandals.length,
       itemBuilder: (context, index) {
         final pandal = featuredPandals[index];
 
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: darkRed,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x25000000),
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: InkWell(
-            onTap: () {},
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.asset(
-                        pandal['image']!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Color(0xFFC06F39), Color(0xFF5C2516)],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.temple_hindu,
-                              color: Color(0xFFFFD889),
-                              size: 45,
-                            ),
-                          );
-                        },
-                      ),
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.transparent, Color(0x66000000)],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.bookmark_border_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ],
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                    offset: Offset(0, 8),
                   ),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10), // প্যাডিং বড় করা হয়েছে
+                  BoxShadow(
+                    color: Color(0x20FFD889),
+                    blurRadius: 12,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipPath(
+                clipper: PremiumWishlistCardClipper(),
+                child: Material(
+                  color: darkRed,
+                  child: InkWell(
+                    onTap: () {},
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          pandal['title']!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14, // ফন্ট সাইজ বড়
-                            height: 1.1,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              color: Color(0xFFFFC34B),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              pandal['rating']!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                        Expanded(
+                          flex: 5,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                pandal['image']!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFFC06F39),
+                                          Color(0xFF5C2516),
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.temple_hindu_rounded,
+                                      color: Color(0xFFFFD889),
+                                      size: 48,
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              color: Color(0xFFFFD2C1),
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                pandal['location']!,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Color(0xFFFFD2C1),
-                                  fontSize: 11,
+
+                              const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Color(0x08000000),
+                                      Colors.transparent,
+                                      Color(0x85000000),
+                                    ],
+                                    stops: [0, 0.48, 1],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
                                 ),
                               ),
+
+                              Positioned(
+                                top: 12,
+                                left: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xCC6B2A16),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0x70FFD889),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.workspace_premium_rounded,
+                                        color: Color(0xFFFFD889),
+                                        size: 13,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'FEATURED',
+                                        style: TextStyle(
+                                          color: Color(0xFFFFE2A6),
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Expanded(
+                          flex: 4,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFB31118), Color(0xFF8C1115)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                             ),
-                          ],
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  pandal['title']!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14.5,
+                                    height: 1.08,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+
+                                const Spacer(),
+
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x22FFD889),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0x55FFD889),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        color: Color(0xFFFFC34B),
+                                        size: 15,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        pandal['rating']!,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_rounded,
+                                      color: Color(0xFFFFD2C1),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        pandal['location']!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFFFFD2C1),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+
+            // Wishlist button
+            Positioned(
+              top: 1,
+              right: 1,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {},
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF783017), Color(0xFF43170D)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFFFD889),
+                        width: 1.4,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x55000000),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                        BoxShadow(color: Color(0x30FFD889), blurRadius: 8),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.bookmark_border_rounded,
+                      color: Color(0xFFFFE4B0),
+                      size: 21,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -700,5 +856,61 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         ],
       ),
     );
+  }
+}
+
+class PremiumWishlistCardClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    const double cardRadius = 20;
+
+    final Path path = Path();
+
+    // Top-left corner
+    path.moveTo(cardRadius, 0);
+
+    // Top edge
+    path.lineTo(size.width - 64, 0);
+
+    // 1. Smooth entry (টপ এজ থেকে কাটআউটের শুরু)
+    path.cubicTo(size.width - 54, 0, size.width - 50, 4, size.width - 50, 16);
+
+    // 2. Main shallow bowl (আসল কাটআউট - এখন অনেক স্মুথ এবং মাপে ছোট)
+    path.cubicTo(size.width - 50, 38, size.width - 38, 50, size.width - 16, 50);
+
+    // 3. Smooth exit (কাটআউট থেকে রাইট এজে মেশা)
+    path.cubicTo(size.width - 4, 50, size.width, 54, size.width, 64);
+
+    // Right edge
+    path.lineTo(size.width, size.height - cardRadius);
+
+    // Bottom-right corner
+    path.quadraticBezierTo(
+      size.width,
+      size.height,
+      size.width - cardRadius,
+      size.height,
+    );
+
+    // Bottom edge
+    path.lineTo(cardRadius, size.height);
+
+    // Bottom-left corner
+    path.quadraticBezierTo(0, size.height, 0, size.height - cardRadius);
+
+    // Left edge
+    path.lineTo(0, cardRadius);
+
+    // Top-left curve
+    path.quadraticBezierTo(0, 0, cardRadius, 0);
+
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return true; // Reclip enabled so you can see changes on hot reload
   }
 }
