@@ -64,22 +64,28 @@ class _FavouriteRouteMapScreenState extends State<FavouriteRouteMapScreen> {
     const size = ui.Size(140, 164);
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    const center = Offset(70, 68);
+    const center = Offset(70, 65);
     const outerRadius = 62.0;
-    const imageRadius = 53.0;
+    const imageRadius = 54.0;
+    const markerColor = Color(0xFFE50914);
 
-    final pinPath = Path()
-      ..moveTo(47, 112)
-      ..lineTo(70, 158)
-      ..lineTo(93, 112)
+    final diamondPath = Path()
+      ..moveTo(70, 96)
+      ..lineTo(106, 126)
+      ..lineTo(70, 160)
+      ..lineTo(34, 126)
       ..close();
-    canvas.drawPath(pinPath, Paint()..color = const Color(0xFFE50914));
-    canvas.drawCircle(
-      center,
-      outerRadius,
-      Paint()..color = const Color(0xFFE50914),
-    );
-    canvas.drawCircle(center, imageRadius + 3, Paint()..color = Colors.white);
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.32)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+    canvas.save();
+    canvas.translate(0, 3);
+    canvas.drawPath(diamondPath, shadowPaint);
+    canvas.drawCircle(center, outerRadius, shadowPaint);
+    canvas.restore();
+
+    canvas.drawPath(diamondPath, Paint()..color = markerColor);
+    canvas.drawCircle(center, outerRadius, Paint()..color = markerColor);
 
     canvas.save();
     canvas.clipPath(
