@@ -95,13 +95,13 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
               (i) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: PandalTile(
-                  
                   pandal: pandals[i],
                   saved: true,
                   onSaved: () => widget.onSaved(i),
                 ),
               ),
             ),
+          SizedBox(height: 60),
         ],
       ),
     );

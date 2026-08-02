@@ -26,15 +26,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
         .toList();
     return Scaffold(
       backgroundColor: Color(0xFFFFF8E9),
+      appBar: AppBar(
+        backgroundColor: Color(0xFFFFF8E9),
+        surfaceTintColor: Color(0xFFFFF8E9),
+        centerTitle: true,
+        title: Text(
+          'Explore Pandals',
+          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
         children: [
-          const Text(
-            'Explore Pandals',
-            style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800),
-          ),
-          const Text('সমস্ত প্যান্ডেল খুঁজুন'),
-          const SizedBox(height: 20),
           TextField(
             onChanged: (v) => setState(() => query = v),
             decoration: InputDecoration(

@@ -655,6 +655,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                   child: Container(
                                     width: 34,
                                     height: 34,
+                                    padding: EdgeInsets.all(5),
                                     decoration: BoxDecoration(
                                       color: const Color(0xCC542111),
                                       shape: BoxShape.circle,
@@ -670,10 +671,12 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                         ),
                                       ],
                                     ),
-                                    child: const Icon(
-                                      Icons.bookmark_border_rounded,
-                                      color: Color(0xFFFFE4B0),
-                                      size: 19,
+                                    child: Image(
+                                      image: AssetImage(
+                                        "assets/bottom_navigation/Favorite_light@4x.png",
+                                      ),
+                                      color: Colors.white,
+                                      colorBlendMode: BlendMode.srcIn,
                                     ),
                                   ),
                                 ),
