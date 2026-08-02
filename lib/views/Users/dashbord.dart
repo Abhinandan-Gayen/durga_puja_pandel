@@ -19,6 +19,8 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   static const Color primaryRed = Color(0xFFE50914);
   static const Color darkRed = Color(0xFF8C1115);
   static const Color creamColor = Color(0xFFFFF8E9);
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   final List<Map<String, dynamic>> categories = [
     {'icon': Icons.temple_hindu_outlined, 'title': 'Top\nPandals'},
@@ -45,6 +47,12 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       'time': '7:00 AM Onwards',
     },
   ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -268,10 +276,12 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         ],
       ),
       child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
         cursorColor: const Color.fromARGB(255, 216, 113, 117),
         style: const TextStyle(color: Color(0xFF333333), fontSize: 15),
         decoration: InputDecoration(
-          hintText: 'Search pandals, areas, events...',
+          hintText: 'Search pandals or areas...',
           hintStyle: const TextStyle(color: Color(0xFF8D8580), fontSize: 14),
           prefixIconConstraints: const BoxConstraints(minWidth: 50),
           prefixIcon: const Icon(
@@ -281,9 +291,20 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           ),
           suffixIconConstraints: const BoxConstraints(minWidth: 50),
           suffixIcon: IconButton(
-            onPressed: () {},
+            onPressed: _searchQuery.trim().isEmpty
+                ? null
+                : () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.tune_rounded, color: primaryRed, size: 22),
+            icon: Icon(
+              _searchQuery.trim().isEmpty
+                  ? Icons.tune_rounded
+                  : Icons.close_rounded,
+              color: primaryRed,
+              size: 22,
+            ),
           ),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
@@ -299,9 +320,17 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   // =========================================================
 
   Widget _buildMainContent() {
-    final firebaseFeaturedPandals = context
-        .watch<PandalController>()
-        .featuredPandals;
+    final pandalController = context.watch<PandalController>();
+    final query = _searchQuery.trim().toLowerCase();
+    final displayedPandals = query.isEmpty
+        ? pandalController.featuredPandals
+        : pandalController.pandals.where((pandal) {
+            return pandal.name.toLowerCase().contains(query) ||
+                pandal.area.toLowerCase().contains(query) ||
+                pandal.city.toLowerCase().contains(query) ||
+                pandal.address.toLowerCase().contains(query) ||
+                pandal.description.toLowerCase().contains(query);
+          }).toList();
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(
@@ -331,9 +360,12 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           // const SizedBox(height: 12),
           // _buildCategories(),
           // const SizedBox(height: 15),
-          _buildSectionHeader(title: 'Featured Pandals', onSeeAll: () {}),
+          _buildSectionHeader(
+            title: query.isEmpty ? 'Featured Pandals' : 'Search Results',
+            onSeeAll: () {},
+          ),
           // const SizedBox(height: 12),
-          _buildFeaturedPandalsGrid(firebaseFeaturedPandals),
+          _buildFeaturedPandalsGrid(displayedPandals),
 
           const SizedBox(height: 24),
 
@@ -448,6 +480,21 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   // =========================================================
 
   Widget _buildFeaturedPandalsGrid(List<PandalModel> featuredPandals) {
+    if (featuredPandals.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 34),
+        child: Center(
+          child: Text(
+            'No matching pandal found',
+            style: TextStyle(
+              color: Color(0xFF8D8580),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
     return GridView.builder(
       padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
