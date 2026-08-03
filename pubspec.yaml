@@ -29,7 +29,6 @@ dependencies:
   video_player: ^2.10.1
   get: ^4.7.3
   onesignal_flutter: ^5.6.7
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

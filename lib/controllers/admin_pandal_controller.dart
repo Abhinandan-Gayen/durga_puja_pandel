@@ -5,6 +5,7 @@ import '../core/services/cloudinary_service.dart';
 import '../core/services/firestore_service.dart';
 import '../models/media_model.dart';
 import '../models/pandal_model.dart';
+import '../services/pandal_api_service.dart';
 
 class AdminPandalController extends ChangeNotifier {
   AdminPandalController(this._firestoreService, this._cloudinaryService);
@@ -36,14 +37,64 @@ class AdminPandalController extends ChangeNotifier {
       _updatingPandalId == pandalId && _updatingStatusField == 'isFeatured';
 
   Future<String?> addPandal(PandalModel pandal) async {
-    return _guardRun<String?>(() async {
-      final id = await _firestoreService.addDocument(
-        collectionPath: FirebaseConstants.pandalsCollection,
-        data: _visibleFormFields(pandal, isCreating: true),
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final response = await PandalApiService.createPandal(
+        name: pandal.name,
+        description: pandal.description,
+        district: pandal.city,
+        address: pandal.address,
+        imageUrl: pandal.thumbnailUrl,
+        latitude: pandal.latitude != 0.0 ? pandal.latitude : null,
+        longitude: pandal.longitude != 0.0 ? pandal.longitude : null,
       );
       await _fetchAll();
-      return id;
-    });
+      return response['data']?['id'] as String?;
+    } catch (error) {
+      errorMessage = error.toString();
+      return null;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>> createPandal({
+    required String name,
+    required String description,
+    required String district,
+    required String address,
+    required String imageUrl,
+    double? latitude,
+    double? longitude,
+  }) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await PandalApiService.createPandal(
+        name: name,
+        description: description,
+        district: district,
+        address: address,
+        imageUrl: imageUrl,
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+      await _fetchAll();
+
+      return response;
+    } catch (error) {
+      errorMessage = error.toString();
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> updatePandal(PandalModel pandal) async {
