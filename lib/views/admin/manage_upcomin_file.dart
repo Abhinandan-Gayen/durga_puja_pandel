@@ -1,3 +1,4 @@
+import 'package:durga_puja_pandel/views/admin/upcomingevent.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +54,7 @@ class ManageUpcomingFilePage extends StatelessWidget {
               final event = controller.events[index];
               return _EventCard(
                 event: event,
-                onEdit: () => _showEditSheet(context, controller, event),
+                onEdit: () => _goToEditPage(context, event),
                 onDelete: () => _confirmDelete(context, controller, event),
               );
             },
@@ -63,238 +64,13 @@ class ManageUpcomingFilePage extends StatelessWidget {
     );
   }
 
-  // ── Edit bottom sheet ─────────────────────────────────────────────────────
-  void _showEditSheet(
-    BuildContext context,
-    EventController controller,
-    EventModel event,
-  ) {
-    final formKey = GlobalKey<FormState>();
-    final monthCtrl = TextEditingController(text: event.month);
-    final dateCtrl = TextEditingController(text: event.date);
-    final titleCtrl = TextEditingController(text: event.title);
-    final subtitleCtrl = TextEditingController(text: event.subtitle);
-    final timeCtrl = TextEditingController(text: event.time);
-    bool notif = event.notification;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-              ),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                ),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Handle bar
-                        Center(
-                          child: Container(
-                            width: 42,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD6D2CF),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        // Header
-                        Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: primaryRed.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(13),
-                              ),
-                              child: const Icon(
-                                Icons.edit_calendar_outlined,
-                                color: primaryRed,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Edit Event',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                    color: darkText,
-                                  ),
-                                ),
-                                Text(
-                                  'Update the event details',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: secondaryText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        // Month & Date row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _field(
-                                controller: monthCtrl,
-                                label: 'Month (e.g. SEP)',
-                                icon: Icons.calendar_month,
-                                caps: TextCapitalization.characters,
-                                required: true,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _field(
-                                controller: dateCtrl,
-                                label: 'Date (e.g. 28)',
-                                icon: Icons.numbers,
-                                keyboardType: TextInputType.number,
-                                required: true,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          controller: titleCtrl,
-                          label: 'Event Title',
-                          icon: Icons.title,
-                          required: true,
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          controller: subtitleCtrl,
-                          label: 'Subtitle',
-                          icon: Icons.subtitles,
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          controller: timeCtrl,
-                          label: 'Time (e.g. 7:00 AM Onwards)',
-                          icon: Icons.access_time_filled_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        // Notification toggle
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF8F3),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: borderColor),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFFE9EA),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.notifications_none_rounded,
-                                  color: primaryRed,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text(
-                                  'Notification',
-                                  style: TextStyle(
-                                    color: darkText,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              Switch(
-                                value: notif,
-                                activeColor: primaryRed,
-                                onChanged: (v) =>
-                                    setSheetState(() => notif = v),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Save button
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (!formKey.currentState!.validate()) return;
-                            Navigator.pop(ctx);
-                            final ok = await controller.updateEvent(
-                              id: event.id,
-                              month: monthCtrl.text,
-                              date: dateCtrl.text,
-                              title: titleCtrl.text,
-                              subtitle: subtitleCtrl.text,
-                              time: timeCtrl.text,
-                              notification: notif,
-                            );
-                            Get.snackbar(
-                              ok ? 'Updated' : 'Error',
-                              ok
-                                  ? 'Event updated successfully!'
-                                  : controller.errorMessage ?? 'Failed',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: ok
-                                  ? const Color(0xFF2E7D32)
-                                  : primaryRed,
-                              colorText: Colors.white,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryRed,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+  // ── Navigate to Edit page ─────────────────────────────────────────────────
+  void _goToEditPage(BuildContext context, EventModel event) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddFestivalScreen(existingEvent: event),
+      ),
     );
   }
 
@@ -349,51 +125,6 @@ class ManageUpcomingFilePage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  // ── Text field helper ─────────────────────────────────────────────────────
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool required = false,
-    TextInputType keyboardType = TextInputType.text,
-    TextCapitalization caps = TextCapitalization.none,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textCapitalization: caps,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: primaryRed, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFFFFCF7),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: borderColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryRed, width: 1.3),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryRed),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryRed, width: 1.3),
-        ),
-      ),
-      validator: required
-          ? (v) => v == null || v.trim().isEmpty ? 'Required' : null
-          : null,
     );
   }
 }

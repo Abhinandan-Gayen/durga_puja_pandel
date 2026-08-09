@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/event_controller.dart';
+import '../../models/event_model.dart';
 
+/// Pass [existingEvent] to open in Edit mode; omit it for Add mode.
 class AddFestivalScreen extends StatefulWidget {
-  const AddFestivalScreen({super.key});
+  final EventModel? existingEvent;
+
+  const AddFestivalScreen({super.key, this.existingEvent});
 
   @override
   State<AddFestivalScreen> createState() => _AddFestivalScreenState();
@@ -13,19 +17,72 @@ class AddFestivalScreen extends StatefulWidget {
 class _AddFestivalScreenState extends State<AddFestivalScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController subtitleController = TextEditingController();
+  late final TextEditingController titleController;
+  late final TextEditingController subtitleController;
 
-  DateTime selectedDate = DateTime.now();
-  TimeOfDay selectedTime = const TimeOfDay(hour: 7, minute: 0);
+  late DateTime selectedDate;
+  late TimeOfDay selectedTime;
+  late bool notificationEnabled;
 
-  bool notificationEnabled = true;
+  bool get _isEditMode => widget.existingEvent != null;
 
   static const Color primaryRed = Color(0xFFE50914);
   static const Color bgColor = Color(0xFFFFF8ED);
   static const Color borderColor = Color(0xFFEBDCC7);
   static const Color darkText = Color(0xFF302B28);
   static const Color secondaryText = Color(0xFF7A7069);
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existingEvent;
+
+    // Pre-fill controllers from existing event (Edit mode) or blank (Add mode)
+    titleController = TextEditingController(text: e?.title ?? '');
+    subtitleController = TextEditingController(text: e?.subtitle ?? '');
+    notificationEnabled = e?.notification ?? true;
+
+    // Parse date from event model
+    if (e != null) {
+      final monthIndex = _monthAbbreviations.indexOf(e.month.toUpperCase());
+      final day = int.tryParse(e.date) ?? DateTime.now().day;
+      final month = monthIndex >= 0 ? monthIndex + 1 : DateTime.now().month;
+      selectedDate = DateTime(DateTime.now().year, month, day);
+
+      // Parse time from "7:00 AM Onwards" format
+      final timeStr = e.time.replaceAll(' Onwards', '').trim();
+      selectedTime = _parseTimeOfDay(timeStr);
+    } else {
+      selectedDate = DateTime.now();
+      selectedTime = const TimeOfDay(hour: 7, minute: 0);
+    }
+  }
+
+  static const List<String> _monthAbbreviations = [
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+  ];
+
+  TimeOfDay _parseTimeOfDay(String timeStr) {
+    try {
+      final isPm = timeStr.toLowerCase().contains('pm');
+      final isAm = timeStr.toLowerCase().contains('am');
+      final clean = timeStr
+          .toLowerCase()
+          .replaceAll('am', '')
+          .replaceAll('pm', '')
+          .trim();
+      final parts = clean.split(':');
+      int hour = int.parse(parts[0].trim());
+      final int minute =
+          parts.length > 1 ? int.parse(parts[1].trim()) : 0;
+      if (isPm && hour != 12) hour += 12;
+      if (isAm && hour == 12) hour = 0;
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (_) {
+      return const TimeOfDay(hour: 7, minute: 0);
+    }
+  }
 
   @override
   void dispose() {
@@ -41,12 +98,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-
-    if (date != null) {
-      setState(() {
-        selectedDate = date;
-      });
-    }
+    if (date != null) setState(() => selectedDate = date);
   }
 
   Future<void> _selectTime() async {
@@ -54,66 +106,59 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
       context: context,
       initialTime: selectedTime,
     );
-
-    if (time != null) {
-      setState(() {
-        selectedTime = time;
-      });
-    }
+    if (time != null) setState(() => selectedTime = time);
   }
 
-  String get monthName {
-    const months = [
-      'JAN',
-      'FEB',
-      'MAR',
-      'APR',
-      'MAY',
-      'JUN',
-      'JUL',
-      'AUG',
-      'SEP',
-      'OCT',
-      'NOV',
-      'DEC',
-    ];
-
-    return months[selectedDate.month - 1];
-  }
+  String get monthName => _monthAbbreviations[selectedDate.month - 1];
 
   Future<void> _saveData() async {
     if (!_formKey.currentState!.validate()) return;
 
     final eventController = context.read<EventController>();
 
-    // Show a loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(color: primaryRed),
-        );
-      },
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: primaryRed),
+      ),
     );
 
-    final success = await eventController.addEvent(
-      month: monthName,
-      date: selectedDate.day.toString(),
-      title: titleController.text,
-      subtitle: subtitleController.text,
-      time: '${selectedTime.format(context)} Onwards',
-      notification: notificationEnabled,
-    );
+    bool success;
+
+    if (_isEditMode) {
+      // ── EDIT mode ──
+      success = await eventController.updateEvent(
+        id: widget.existingEvent!.id,
+        month: monthName,
+        date: selectedDate.day.toString(),
+        title: titleController.text,
+        subtitle: subtitleController.text,
+        time: '${selectedTime.format(context)} Onwards',
+        notification: notificationEnabled,
+      );
+    } else {
+      // ── ADD mode ──
+      success = await eventController.addEvent(
+        month: monthName,
+        date: selectedDate.day.toString(),
+        title: titleController.text,
+        subtitle: subtitleController.text,
+        time: '${selectedTime.format(context)} Onwards',
+        notification: notificationEnabled,
+      );
+    }
 
     // Pop the loading dialog
     if (mounted) Navigator.pop(context);
 
     if (success) {
-      if (mounted) Navigator.pop(context); // Pop the screen itself
+      if (mounted) Navigator.pop(context);
       Get.snackbar(
         'Success',
-        'Festival event added successfully!',
+        _isEditMode
+            ? 'Event updated successfully!'
+            : 'Festival event added successfully!',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: const Color(0xFF2E7D32),
         colorText: Colors.white,
@@ -121,7 +166,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
     } else {
       Get.snackbar(
         'Error',
-        eventController.errorMessage ?? 'Failed to add event.',
+        eventController.errorMessage ?? 'Something went wrong.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: primaryRed,
         colorText: Colors.white,
@@ -138,9 +183,9 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
         surfaceTintColor: bgColor,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'Add Festival',
-          style: TextStyle(
+        title: Text(
+          _isEditMode ? 'Edit Festival' : 'Add Festival',
+          style: const TextStyle(
             color: darkText,
             fontWeight: FontWeight.w700,
             fontSize: 18,
@@ -184,9 +229,11 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Festival Details',
-                                style: TextStyle(
+                              Text(
+                                _isEditMode
+                                    ? 'Edit Festival Details'
+                                    : 'Festival Details',
+                                style: const TextStyle(
                                   color: darkText,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,
@@ -197,9 +244,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
 
                               // EVENT NAME
                               _label('Event Name'),
-
                               const SizedBox(height: 7),
-
                               TextFormField(
                                 controller: titleController,
                                 onChanged: (_) => setState(() {}),
@@ -219,9 +264,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
 
                               // SUBTITLE
                               _label('Subtitle'),
-
                               const SizedBox(height: 7),
-
                               TextFormField(
                                 controller: subtitleController,
                                 onChanged: (_) => setState(() {}),
@@ -235,9 +278,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
 
                               // DATE
                               _label('Date'),
-
                               const SizedBox(height: 7),
-
                               InkWell(
                                 onTap: _selectDate,
                                 borderRadius: BorderRadius.circular(14),
@@ -245,8 +286,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
                                   width: double.infinity,
                                   height: 54,
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                  ),
+                                      horizontal: 14),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFFFFCF7),
                                     borderRadius: BorderRadius.circular(14),
@@ -285,17 +325,14 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
 
                               // TIME
                               _label('Time'),
-
                               const SizedBox(height: 7),
-
                               InkWell(
                                 onTap: _selectTime,
                                 borderRadius: BorderRadius.circular(14),
                                 child: Container(
                                   height: 54,
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                  ),
+                                      horizontal: 14),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFFFFCF7),
                                     borderRadius: BorderRadius.circular(14),
@@ -399,9 +436,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
 
                         const SizedBox(height: 24),
 
-                        // ============================
-                        // BUTTONS
-                        // ============================
+                        // ── BUTTONS ──────────────────────────────────────
                         Row(
                           children: [
                             // CANCEL
@@ -409,15 +444,11 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
                               child: SizedBox(
                                 height: 52,
                                 child: OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
+                                  onPressed: () => Navigator.pop(context),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: primaryRed,
                                     side: const BorderSide(
-                                      color: primaryRed,
-                                      width: 1.3,
-                                    ),
+                                        color: primaryRed, width: 1.3),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
                                     ),
@@ -435,7 +466,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
 
                             const SizedBox(width: 12),
 
-                            // SAVE
+                            // SAVE / UPDATE
                             Expanded(
                               child: SizedBox(
                                 height: 52,
@@ -449,17 +480,17 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.check_circle_outline_rounded,
                                         size: 19,
                                       ),
-                                      SizedBox(width: 7),
+                                      const SizedBox(width: 7),
                                       Text(
-                                        'Save',
-                                        style: TextStyle(
+                                        _isEditMode ? 'Update' : 'Save',
+                                        style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -485,153 +516,6 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
     );
   }
 
-  // =========================================================
-  // PREVIEW
-  // =========================================================
-  Widget _buildPreviewCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF7),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x10000000),
-            blurRadius: 16,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // DATE BOX
-          Container(
-            width: 58,
-            height: 68,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(11),
-              border: Border.all(color: const Color(0xFFE8D8C4)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x12000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 26,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: primaryRed,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    monthName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      selectedDate.day.toString().padLeft(2, '0'),
-                      style: const TextStyle(
-                        color: primaryRed,
-                        fontSize: 23,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titleController.text.trim().isEmpty
-                      ? 'Maha Saptami'
-                      : titleController.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: darkText,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitleController.text.trim().isEmpty
-                      ? 'Puja & Pushpanjali'
-                      : subtitleController.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: secondaryText,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.schedule_rounded,
-                      size: 14,
-                      color: primaryRed,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '${selectedTime.format(context)} Onwards',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: secondaryText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          Icon(
-            notificationEnabled
-                ? Icons.notifications_none_rounded
-                : Icons.notifications_off_outlined,
-            color: notificationEnabled ? primaryRed : Colors.grey,
-            size: 25,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _label(String text) {
     return Text(
       text,
@@ -653,7 +537,8 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
       prefixIcon: Icon(icon, color: primaryRed, size: 20),
       filled: true,
       fillColor: const Color(0xFFFFFCF7),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: borderColor),
