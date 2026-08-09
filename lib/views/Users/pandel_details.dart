@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/pandal_controller.dart';
@@ -95,8 +96,12 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
 
   Future<void> _submitRating(String pandalId, double ratingValue) async {
     try {
-      final userId = _userId.isNotEmpty ? _userId : await _getOrGenerateUserId();
-      final pandalRef = FirebaseFirestore.instance.collection('pandals').doc(pandalId);
+      final userId = _userId.isNotEmpty
+          ? _userId
+          : await _getOrGenerateUserId();
+      final pandalRef = FirebaseFirestore.instance
+          .collection('pandals')
+          .doc(pandalId);
       final ratingRef = pandalRef.collection('ratings').doc(userId);
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -104,8 +109,10 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
         if (!pandalSnapshot.exists) return;
 
         final data = pandalSnapshot.data()!;
-        final double currentTotalRating = (data['totalRating'] as num?)?.toDouble() ?? 0.0;
-        final int currentTotalReviews = (data['totalReviews'] as num?)?.toInt() ?? 0;
+        final double currentTotalRating =
+            (data['totalRating'] as num?)?.toDouble() ?? 0.0;
+        final int currentTotalReviews =
+            (data['totalReviews'] as num?)?.toInt() ?? 0;
 
         final double newTotalRating = currentTotalRating + ratingValue;
         final int newTotalReviews = currentTotalReviews + 1;
@@ -154,7 +161,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
 
   Future<void> _showRatingDialog(BuildContext context, String pandalId) async {
     double selectedRating = 0;
-    
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -307,323 +314,335 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
         await _handleExit(pandalId);
       },
       child: Scaffold(
-      backgroundColor: const Color(0xFFFAF6F0),
-      body: Stack(
-        children: [
-          // Top Image Background Placeholder
-          SizedBox(
-            height: 350,
-            width: double.infinity,
-            child: PandalMediaSlider(
-              images: heroImages,
-              videos: const [],
+        backgroundColor: const Color(0xFFFAF6F0),
+        body: Stack(
+          children: [
+            // Top Image Background Placeholder
+            SizedBox(
               height: 350,
-            ),
-          ),
-
-          // Top Action Buttons (Back, Bookmark, Share)
-
-          // Scrollable Content
-          SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.only(top: 280), // Overlaps the image
-              decoration: const BoxDecoration(
-                color: Color(0xFFFAF6F0),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              width: double.infinity,
+              child: PandalMediaSlider(
+                images: heroImages,
+                videos: const [],
+                height: 350,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    Text(
-                      pandal.name,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Serif',
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+            ),
 
-                    // Ratings and Badge
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.orange, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          pandal.averageRating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 16,
+            // Top Action Buttons (Back, Bookmark, Share)
+
+            // Scrollable Content
+            SingleChildScrollView(
+              child: Container(
+                margin: const EdgeInsets.only(top: 280), // Overlaps the image
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFAF6F0),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        pandal.name,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Serif',
+                          color: Color(0xFF222222),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Ratings and Badge
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            pandal.averageRating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF333333),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${pandal.totalReviews} Ratings)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          if (pandal.isFeatured)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.orange.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.emoji_events,
+                                    color: Colors.orange.shade700,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Top Rated',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade700,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Location
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            color: Colors.brown.shade400,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${pandal.area} • ${pandal.address}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      const Text(
+                        'About',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        pandal.description,
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                      if (pandal.images.isNotEmpty) ...[
+                        const SizedBox(height: 28),
+                        const Text(
+                          'Photos',
+                          style: TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF333333),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '(${pandal.totalReviews} Ratings)',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        if (pandal.isFeatured)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.orange.shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.emoji_events,
-                                  color: Colors.orange.shade700,
-                                  size: 16,
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          height: 145,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: pandal.images.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final imageUrl = pandal.images[index];
+                              return GestureDetector(
+                                onTap: () => _showImagePreview(
+                                  context,
+                                  index,
+                                  pandal.images,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Top Rated',
-                                  style: TextStyle(
-                                    color: Colors.orange.shade700,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Location
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.brown.shade400,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${pandal.area} • ${pandal.address}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    const Text(
-                      'About',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      pandal.description,
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    if (pandal.images.isNotEmpty) ...[
-                      const SizedBox(height: 28),
-                      const Text(
-                        'Photos',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        height: 145,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: pandal.images.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 12),
-                          itemBuilder: (context, index) {
-                            final imageUrl = pandal.images[index];
-                            return GestureDetector(
-                              onTap: () => _showImagePreview(
-                                context,
-                                index,
-                                pandal.images,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: SizedBox(
-                                  width: 210,
-                                  child: Image.network(
-                                    imageUrl,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const ShimmerPlaceholder(
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        borderRadius: 0,
-                                      );
-                                    },
-                                    errorBuilder: (_, _, _) => const ColoredBox(
-                                      color: Color(0xFFFFE6BE),
-                                      child: Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 38,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                    if (pandal.videos.isNotEmpty) ...[
-                      const SizedBox(height: 28),
-                      const Text(
-                        'Videos',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        height: 130,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: pandal.videos.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 12),
-                          itemBuilder: (context, index) {
-                            final videoUrl = pandal.videos[index];
-                            return GestureDetector(
-                              onTap: () => _showVideoPreview(context, videoUrl),
-                              child: Container(
-                                width: 210,
-                                decoration: BoxDecoration(
-                                  color: Colors.black87,
+                                child: ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    IgnorePointer(
-                                      child: PandalVideoPlayer(
-                                        url: videoUrl,
-                                        autoPlay: false,
-                                        fit: BoxFit.cover,
-                                        controlsEnabled: false,
-                                      ),
+                                  child: SizedBox(
+                                    width: 210,
+                                    child: Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, progress) {
+                                            if (progress == null) return child;
+                                            return const ShimmerPlaceholder(
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              borderRadius: 0,
+                                            );
+                                          },
+                                      errorBuilder: (_, _, _) =>
+                                          const ColoredBox(
+                                            color: Color(0xFFFFE6BE),
+                                            child: Icon(
+                                              Icons.broken_image_outlined,
+                                              size: 38,
+                                            ),
+                                          ),
                                     ),
-                                    const ColoredBox(color: Colors.black26),
-                                    const Center(
-                                      child: Icon(
-                                        Icons.play_circle_fill_rounded,
-                                        color: Colors.white,
-                                        size: 62,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
+                      ],
+                      if (pandal.videos.isNotEmpty) ...[
+                        const SizedBox(height: 28),
+                        const Text(
+                          'Videos',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          height: 130,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: pandal.videos.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final videoUrl = pandal.videos[index];
+                              return GestureDetector(
+                                onTap: () =>
+                                    _showVideoPreview(context, videoUrl),
+                                child: Container(
+                                  width: 210,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black87,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      IgnorePointer(
+                                        child: PandalVideoPlayer(
+                                          url: videoUrl,
+                                          autoPlay: false,
+                                          fit: BoxFit.cover,
+                                          controlsEnabled: false,
+                                        ),
+                                      ),
+                                      const ColoredBox(color: Colors.black26),
+                                      const Center(
+                                        child: Icon(
+                                          Icons.play_circle_fill_rounded,
+                                          color: Colors.white,
+                                          size: 62,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 28),
+                      _buildRatingsList(pandalId),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildTopActionButton(
+                        icon: Icons.arrow_back_rounded,
+                        onTap: () => _handleExit(pandalId),
+                      ),
+
+                      _buildTopActionButton(
+                        icon: isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        onTap: toggleFavorite,
                       ),
                     ],
-                    const SizedBox(height: 28),
-
-                    const SizedBox(height: 80),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildTopActionButton(
-                      icon: Icons.arrow_back_rounded,
-                      onTap: () => _handleExit(pandalId),
-                    ),
-
-                    _buildTopActionButton(
-                      icon: isFavorite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      onTap: toggleFavorite,
-                    ),
-                  ],
-                ),
+          ],
+        ),
+        bottomSheet: _buildBottomActionBar(
+          onNavigate: () {
+            final imageUrl = pandal.thumbnailUrl.isNotEmpty
+                ? pandal.thumbnailUrl
+                : pandal.images.isNotEmpty
+                ? pandal.images.first
+                : '';
+            final navigationPandal = Pandal(
+              pandal.name,
+              pandal.name,
+              pandal.area,
+              '',
+              pandal.averageRating.toStringAsFixed(1),
+              pandal.crowdLevel,
+              pandal.themeName,
+              imageUrl,
+              pandal.latitude,
+              pandal.longitude,
+            );
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    FavouriteRouteMapScreen(pandal: navigationPandal),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+          onFavorite: toggleFavorite,
+          isFavorite: isFavorite,
+        ),
       ),
-      bottomSheet: _buildBottomActionBar(
-        onNavigate: () {
-          final imageUrl = pandal.thumbnailUrl.isNotEmpty
-              ? pandal.thumbnailUrl
-              : pandal.images.isNotEmpty
-              ? pandal.images.first
-              : '';
-          final navigationPandal = Pandal(
-            pandal.name,
-            pandal.name,
-            pandal.area,
-            '',
-            pandal.averageRating.toStringAsFixed(1),
-            pandal.crowdLevel,
-            pandal.themeName,
-            imageUrl,
-            pandal.latitude,
-            pandal.longitude,
-          );
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => FavouriteRouteMapScreen(pandal: navigationPandal),
-            ),
-          );
-        },
-        onFavorite: toggleFavorite,
-        isFavorite: isFavorite,
-      ),
-    ),
-  );
-}
+    );
+  }
 
   Future<void> _showImagePreview(
     BuildContext context,
@@ -937,6 +956,121 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
           child: Icon(icon, color: Colors.white, size: 22),
         ),
       ),
+    );
+  }
+
+  Widget _buildRatingsList(String pandalId) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('pandals')
+          .doc(pandalId)
+          .collection('ratings')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'User Ratings',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'No ratings yet. Be the first to rate!',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ],
+          );
+        }
+
+        final docs = snapshot.data!.docs;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'User Ratings',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
+              ),
+            ),
+            // const SizedBox(height: 14),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: docs.length,
+              separatorBuilder: (_, _) =>
+                  const Divider(height: 20, color: Color(0xFFE5D5C5)),
+              itemBuilder: (context, index) {
+                final data = docs[index].data();
+                final String userId = data['userId'] as String? ?? 'Anonymous';
+                final double ratingVal =
+                    (data['rating'] as num?)?.toDouble() ?? 0.0;
+                final Timestamp? ts = data['createdAt'] as Timestamp?;
+                final DateTime? dt = ts?.toDate();
+                final String dateStr = dt != null
+                    ? DateFormat('dd MMM yyyy').format(dt)
+                    : 'Recent';
+
+                final String displayId = userId.startsWith('visitor_')
+                    ? 'Visitor (${userId.substring(userId.length - 6)})'
+                    : userId.length > 10
+                    ? 'User (${userId.substring(userId.length - 6)})'
+                    : userId;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          displayId,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF542111),
+                          ),
+                        ),
+                        Text(
+                          dateStr,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: List.generate(5, (starIndex) {
+                        return Icon(
+                          starIndex < ratingVal
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: const Color(0xFFFFC34B),
+                          size: 20,
+                        );
+                      }),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
