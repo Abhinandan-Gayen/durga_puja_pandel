@@ -12,6 +12,7 @@ import 'controllers/pandal_controller.dart';
 import 'controllers/review_controller.dart';
 import 'controllers/search_filter_controller.dart';
 import 'controllers/theme_controller.dart';
+import 'controllers/event_controller.dart';
 import 'core/services/cloudinary_service.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'core/services/firestore_service.dart';
@@ -122,6 +123,9 @@ class _PujoPandalGuideAppState extends State<PujoPandalGuideApp> {
         ChangeNotifierProvider(create: (_) => AppShellController()),
         ChangeNotifierProvider<SliderController>(
           create: (_) => SliderController(),
+        ),
+        ChangeNotifierProvider<EventController>(
+          create: (_) => EventController(),
         ),
       ],
       child: Consumer<ThemeController>(

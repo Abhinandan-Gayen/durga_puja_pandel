@@ -13,6 +13,7 @@ import '../../models/pandal_model.dart';
 import '../admin/location_picker_screen.dart';
 import '../admin/slider-image-post/controller/slider_controller.dart';
 import '../widgets/shimmer.dart';
+import '../../controllers/event_controller.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'location_pandals_screen.dart';
 
@@ -49,23 +50,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
     {'icon': Icons.restaurant_outlined, 'title': 'Food &\nFestivals'},
   ];
 
-  // ৪টি প্যান্ডেল দেখানোর জন্য আরও একটি যোগ করা হয়েছে
-  final List<Map<String, String>> upcomingEvents = [
-    {
-      'month': 'SEP',
-      'date': '28',
-      'title': 'Maha Saptami',
-      'subtitle': 'Puja & Pushpanjali',
-      'time': '7:00 AM Onwards',
-    },
-    {
-      'month': 'SEP',
-      'date': '29',
-      'title': 'Maha Ashtami',
-      'subtitle': 'Anjali & Bhog',
-      'time': '7:00 AM Onwards',
-    },
-  ];
+  // Loaded dynamically via EventController
 
   @override
   void initState() {
@@ -1142,17 +1127,47 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
   // =========================================================
 
   Widget _buildUpcomingEvents() {
+    final eventController = context.watch<EventController>();
+    final activeEvents = eventController.events;
+
+    if (eventController.isLoading && activeEvents.isEmpty) {
+      return Column(
+        children: List.generate(2, (index) => const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: ShimmerPlaceholder(
+            width: double.infinity,
+            height: 90,
+            borderRadius: 16,
+          ),
+        )),
+      );
+    }
+
+    if (activeEvents.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            'No upcoming events scheduled',
+            style: TextStyle(
+              color: Color(0xFF746B66),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Column(
-      children: List.generate(upcomingEvents.length, (index) {
-        final event = upcomingEvents[index];
+      children: List.generate(activeEvents.length, (index) {
+        final event = activeEvents[index];
 
         return Container(
           margin: EdgeInsets.only(
-            bottom: index == upcomingEvents.length - 1 ? 0 : 12,
+            bottom: index == activeEvents.length - 1 ? 0 : 12,
           ),
-          padding: const EdgeInsets.all(
-            12,
-          ), // ফিক্সড হাইট সরিয়ে প্যাডিং দেওয়া হয়েছে
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: const Color(0xFFFFFCF6),
             borderRadius: BorderRadius.circular(16),
@@ -1168,23 +1183,23 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildEventDate(month: event['month']!, date: event['date']!),
+              _buildEventDate(month: event.month, date: event.date),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      event['title']!,
+                      event.title,
                       style: const TextStyle(
                         color: Color(0xFF3B3531),
-                        fontSize: 16, // সাইজ স্ট্যান্ডার্ড
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      event['subtitle']!,
+                      event.subtitle,
                       style: const TextStyle(
                         color: Color(0xFF746B66),
                         fontSize: 13,
@@ -1201,7 +1216,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          event['time']!,
+                          event.time,
                           style: const TextStyle(
                             color: Color(0xFF746B66),
                             fontSize: 12,

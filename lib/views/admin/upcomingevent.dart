@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/event_controller.dart';
 
 class AddFestivalScreen extends StatefulWidget {
   const AddFestivalScreen({super.key});
@@ -78,16 +81,53 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
     return months[selectedDate.month - 1];
   }
 
-  void _saveData() {
+  Future<void> _saveData() async {
     if (!_formKey.currentState!.validate()) return;
 
-    debugPrint('Title: ${titleController.text}');
-    debugPrint('Subtitle: ${subtitleController.text}');
-    debugPrint('Date: $selectedDate');
-    debugPrint('Time: ${selectedTime.format(context)}');
-    debugPrint('Notification: $notificationEnabled');
+    final eventController = context.read<EventController>();
 
-    Navigator.pop(context);
+    // Show a loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(
+            color: primaryRed,
+          ),
+        );
+      },
+    );
+
+    final success = await eventController.addEvent(
+      month: monthName,
+      date: selectedDate.day.toString(),
+      title: titleController.text,
+      subtitle: subtitleController.text,
+      time: '${selectedTime.format(context)} Onwards',
+    );
+
+    // Pop the loading dialog
+    if (mounted) Navigator.pop(context);
+
+    if (success) {
+      if (mounted) Navigator.pop(context); // Pop the screen itself
+      Get.snackbar(
+        'Success',
+        'Festival event added successfully!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
+      );
+    } else {
+      Get.snackbar(
+        'Error',
+        eventController.errorMessage ?? 'Failed to add event.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: primaryRed,
+        colorText: Colors.white,
+      );
+    }
   }
 
   @override
