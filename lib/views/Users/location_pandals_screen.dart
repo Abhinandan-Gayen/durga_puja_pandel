@@ -120,11 +120,7 @@ class _DashboardStylePandalCard extends StatelessWidget {
         ? pandal.images.first
         : '';
 
-    return Opacity(
-      opacity: pandal.isActive ? 1 : 0.42,
-      child: IgnorePointer(
-        ignoring: !pandal.isActive,
-        child: Container(
+    final cardContent = Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             boxShadow: const [
@@ -319,8 +315,55 @@ class _DashboardStylePandalCard extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
+        );
+
+      if (pandal.isActive) {
+        return cardContent;
+      }
+
+      return Stack(
+        children: [
+          Opacity(
+            opacity: 0.42,
+            child: cardContent,
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFFFF5252),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF5252).withOpacity(0.4),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'Inactive',
+                    style: TextStyle(
+                      color: Color(0xFFFF5252),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
   }
 }

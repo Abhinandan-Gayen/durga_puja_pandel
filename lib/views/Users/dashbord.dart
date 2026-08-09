@@ -765,10 +765,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                 ? '${(distanceKm * 1000).round()} m away'
                 : '${distanceKm.toStringAsFixed(1)} km away';
 
-            return Opacity(
-              opacity: pandal.isActive ? 1 : 0.42,
-
-              child: Container(
+            final cardContent = Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(borderRadius),
                   boxShadow: const [
@@ -793,9 +790,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                     color: darkRed,
 
                     child: InkWell(
-                      onTap: pandal.isActive
-                          ? () => Get.toNamed('/pandal/${pandal.id}')
-                          : null,
+                      onTap: () => Get.toNamed('/pandal/${pandal.id}'),
 
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1114,7 +1109,55 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                     ),
                   ),
                 ),
-              ),
+              );
+
+            if (pandal.isActive) {
+              return cardContent;
+            }
+
+            return Stack(
+              children: [
+                Opacity(
+                  opacity: 0.42,
+                  child: cardContent,
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Center(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallCard ? 10 : 14,
+                          vertical: isSmallCard ? 6 : 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFFF5252),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF5252).withOpacity(0.4),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'Inactive',
+                          style: TextStyle(
+                            color: const Color(0xFFFF5252),
+                            fontSize: isSmallCard ? 13 : 15,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         );
@@ -1132,14 +1175,17 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
     if (eventController.isLoading && activeEvents.isEmpty) {
       return Column(
-        children: List.generate(2, (index) => const Padding(
-          padding: EdgeInsets.only(bottom: 12),
-          child: ShimmerPlaceholder(
-            width: double.infinity,
-            height: 90,
-            borderRadius: 16,
+        children: List.generate(
+          2,
+          (index) => const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: ShimmerPlaceholder(
+              width: double.infinity,
+              height: 90,
+              borderRadius: 16,
+            ),
           ),
-        )),
+        ),
       );
     }
 
@@ -1401,9 +1447,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             : (availableWidth >= 700 ? 3 : 2);
         double spacing = availableWidth >= 1100
             ? 16
-            : (availableWidth >= 700
-                ? 14
-                : (availableWidth < 360 ? 8 : 12));
+            : (availableWidth >= 700 ? 14 : (availableWidth < 360 ? 8 : 12));
         final double cardWidth =
             (availableWidth - ((crossAxisCount - 1) * spacing)) /
             crossAxisCount;
