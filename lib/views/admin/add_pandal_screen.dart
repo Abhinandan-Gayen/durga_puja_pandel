@@ -1197,9 +1197,7 @@ class _SettingToggle extends StatelessWidget {
     this.icon,
     this.label,
     this.value,
-    this.onChanged, {
-    this.sub,
-  });
+    this.onChanged) : sub = null;
   final IconData icon;
   final String label;
   final bool value;

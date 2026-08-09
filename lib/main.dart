@@ -9,45 +9,86 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Hive.initFlutter();
-  await Hive.openBox<dynamic>('favoritePandals');
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Hive.openBox('favoritePandals');
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   await _initializeOneSignal();
+
   runApp(const PujoPandalGuideApp());
 }
 
 Future<void> _initializeOneSignal() async {
-  final isMobile = !kIsWeb &&
+  final bool isMobile =
+      !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
+
   if (!isMobile) return;
 
   try {
-    OneSignal.initialize('32b72fcd-ce88-4875-baca-e7a27ebc4425');
+    OneSignal.initialize(
+      '32b72fcd-ce88-4875-baca-e7a27ebc4425',
+    );
 
-    final permissionGranted =
+    final bool permissionGranted =
         await OneSignal.Notifications.requestPermission(false);
-    debugPrint('Notification permission: $permissionGranted');
+
+    debugPrint(
+      'OneSignal notification permission: $permissionGranted',
+    );
 
     OneSignal.User.pushSubscription.addObserver((state) {
-      debugPrint('OneSignal Subscription ID: ${state.current.id}');
-      debugPrint('FCM Push Token: ${state.current.token}');
-      debugPrint('Opted In: ${state.current.optedIn}');
+      debugPrint(
+        'OneSignal Subscription ID: ${state.current.id}',
+      );
+
+      debugPrint(
+        'OneSignal Push Token: ${state.current.token}',
+      );
+
+      debugPrint(
+        'OneSignal Opted In: ${state.current.optedIn}',
+      );
     });
 
     OneSignal.Notifications.addClickListener((event) {
       debugPrint(
-        'Notification clicked: ${event.notification.notificationId}',
+        'Notification clicked: '
+        '${event.notification.notificationId}',
       );
-      debugPrint('Additional data: ${event.notification.additionalData}');
+
+      debugPrint(
+        'Additional data: '
+        '${event.notification.additionalData}',
+      );
     });
 
-    OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-      debugPrint('Foreground notification: ${event.notification.title}');
-      event.notification.display();
-    });
+    OneSignal.Notifications.addForegroundWillDisplayListener(
+      (event) {
+        debugPrint(
+          'Foreground notification received: '
+          '${event.notification.title}',
+        );
+
+        // Do not call event.preventDefault().
+        // Do not call event.notification.display().
+        // OneSignal automatically displays foreground notifications.
+      },
+    );
   } catch (error, stackTrace) {
-    debugPrint('OneSignal initialization skipped: $error');
-    if (kDebugMode) debugPrintStack(stackTrace: stackTrace);
+    debugPrint(
+      'OneSignal initialization failed: $error',
+    );
+
+    if (kDebugMode) {
+      debugPrintStack(
+        stackTrace: stackTrace,
+      );
+    }
   }
 }
