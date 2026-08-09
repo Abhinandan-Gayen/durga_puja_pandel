@@ -94,7 +94,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
     }
   }
 
-  Future<void> _submitRating(String pandalId, double ratingValue) async {
+  Future<bool> _submitRating(String pandalId, double ratingValue) async {
     try {
       final userId = _userId.isNotEmpty
           ? _userId
@@ -147,6 +147,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
         backgroundColor: const Color(0xFF2E7D32),
         colorText: Colors.white,
       );
+      return true;
     } catch (e) {
       debugPrint('Error submitting rating: $e');
       Get.snackbar(
@@ -156,11 +157,13 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
         backgroundColor: const Color(0xFFC62828),
         colorText: Colors.white,
       );
+      return false;
     }
   }
 
   Future<void> _showRatingDialog(BuildContext context, String pandalId) async {
     double selectedRating = 0;
+    bool isSubmitting = false;
 
     await showDialog<void>(
       context: context,
@@ -200,11 +203,13 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                       children: List.generate(5, (index) {
                         final starValue = index + 1.0;
                         return GestureDetector(
-                          onTap: () {
-                            setStateDialog(() {
-                              selectedRating = starValue;
-                            });
-                          },
+                          onTap: isSubmitting
+                              ? null
+                              : () {
+                                  setStateDialog(() {
+                                    selectedRating = starValue;
+                                  });
+                                },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Icon(
@@ -224,20 +229,33 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                  },
+                  onPressed: isSubmitting
+                      ? null
+                      : () {
+                          Navigator.of(dialogContext).pop();
+                        },
                   child: const Text(
                     'Maybe Later',
                     style: TextStyle(color: Color(0xFF8D8580)),
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: selectedRating == 0
+                  onPressed: selectedRating == 0 || isSubmitting
                       ? null
                       : () async {
-                          Navigator.of(dialogContext).pop();
-                          await _submitRating(pandalId, selectedRating);
+                          setStateDialog(() {
+                            isSubmitting = true;
+                          });
+                          final success = await _submitRating(pandalId, selectedRating);
+                          if (success) {
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                          } else {
+                            setStateDialog(() {
+                              isSubmitting = false;
+                            });
+                          }
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8C1115),
@@ -247,7 +265,16 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text('Submit'),
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Submit'),
                 ),
               ],
             );
