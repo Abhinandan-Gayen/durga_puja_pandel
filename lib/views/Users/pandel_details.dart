@@ -196,7 +196,11 @@ class PandalDetailScreen extends StatelessWidget {
                           itemBuilder: (context, index) {
                             final imageUrl = pandal.images[index];
                             return GestureDetector(
-                              onTap: () => _showImagePreview(context, imageUrl),
+                              onTap: () => _showImagePreview(
+                                context,
+                                index,
+                                pandal.images,
+                              ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
                                 child: SizedBox(
@@ -384,57 +388,18 @@ class PandalDetailScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _showImagePreview(BuildContext context, String imageUrl) async {
+  Future<void> _showImagePreview(
+    BuildContext context,
+    int initialIndex,
+    List<String> imageUrls,
+  ) async {
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.92),
       builder: (dialogContext) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: SafeArea(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 5,
-                    boundaryMargin: const EdgeInsets.all(80),
-                    child: Center(
-                      child: Image.network(
-                        imageUrl,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          );
-                        },
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.white70,
-                          size: 64,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Material(
-                    color: Colors.black54,
-                    shape: const CircleBorder(),
-                    child: IconButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      icon: const Icon(Icons.close, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return _ImagePreviewDialog(
+          imageUrls: imageUrls,
+          initialIndex: initialIndex,
         );
       },
     );
@@ -733,6 +698,195 @@ class PandalDetailScreen extends StatelessWidget {
           width: 44,
           height: 44,
           child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// Image Preview Dialog with PageView and Interactive Zoom Panning
+// -------------------------------------------------------------
+class _ImagePreviewDialog extends StatefulWidget {
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  const _ImagePreviewDialog({
+    required this.imageUrls,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_ImagePreviewDialog> createState() => _ImagePreviewDialogState();
+}
+
+class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
+  late final PageController _pageController;
+  late int _currentPage;
+  bool _canScroll = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPage = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            // PageView of images
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.imageUrls.length,
+                onPageChanged: (page) {
+                  setState(() {
+                    _currentPage = page;
+                  });
+                },
+                physics: _canScroll
+                    ? const BouncingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return _GestureZoomImage(
+                    imageUrl: widget.imageUrls[index],
+                    onZoomChanged: (zoomed) {
+                      setState(() {
+                        _canScroll = !zoomed;
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+            // Close Button
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
+              ),
+            ),
+            // Page Indicator text at the bottom
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '${_currentPage + 1} of ${widget.imageUrls.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GestureZoomImage extends StatefulWidget {
+  final String imageUrl;
+  final ValueChanged<bool> onZoomChanged;
+
+  const _GestureZoomImage({
+    required this.imageUrl,
+    required this.onZoomChanged,
+  });
+
+  @override
+  State<_GestureZoomImage> createState() => _GestureZoomImageState();
+}
+
+class _GestureZoomImageState extends State<_GestureZoomImage> {
+  final TransformationController _transformationController =
+      TransformationController();
+  TapDownDetails? _doubleTapDetails;
+
+  void _handleDoubleTap() {
+    if (_transformationController.value != Matrix4.identity()) {
+      _transformationController.value = Matrix4.identity();
+      widget.onZoomChanged(false);
+    } else {
+      final position = _doubleTapDetails!.localPosition;
+      final Matrix4 matrix = Matrix4.identity();
+      matrix.setEntry(0, 3, -position.dx * 1.5);
+      matrix.setEntry(1, 3, -position.dy * 1.5);
+      matrix.multiply(Matrix4.diagonal3Values(2.5, 2.5, 1.0));
+      _transformationController.value = matrix;
+      widget.onZoomChanged(true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onDoubleTapDown: (details) => _doubleTapDetails = details,
+      onDoubleTap: _handleDoubleTap,
+      child: InteractiveViewer(
+        transformationController: _transformationController,
+        minScale: 1.0,
+        maxScale: 4.0,
+        boundaryMargin: const EdgeInsets.all(20),
+        onInteractionEnd: (details) {
+          final scale = _transformationController.value.getMaxScaleOnAxis();
+          widget.onZoomChanged(scale > 1.05);
+        },
+        child: Center(
+          child: Image.network(
+            widget.imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
+              );
+            },
+            errorBuilder: (_, _, _) => const Icon(
+              Icons.broken_image_outlined,
+              color: Colors.white70,
+              size: 64,
+            ),
+          ),
         ),
       ),
     );
