@@ -1,4 +1,5 @@
 import 'package:durga_puja_pandel/views/admin/slider-image-post/ui/upload_slider_screen.dart';
+import 'package:durga_puja_pandel/views/admin/upcomingevent.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -108,6 +109,11 @@ class AppRoutes {
     GetPage(
       name: '/admin/upload-media',
       page: () => const UploadSliderScreen(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: '/admin/upcomin',
+      page: () => const AddFestivalScreen(),
       middlewares: [AuthMiddleware()],
     ),
   ];

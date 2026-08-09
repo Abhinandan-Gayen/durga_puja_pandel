@@ -96,10 +96,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   _ErrorBanner(message: admin.errorMessage!),
                   const SizedBox(height: 12),
                 ],
-                _StatGrid(
-                  anim: _fadeSlide,
-                  admin: admin,
-                ),
+                _StatGrid(anim: _fadeSlide, admin: admin),
                 const SizedBox(height: 28),
                 FadeTransition(
                   opacity: _fadeSlide,
@@ -115,9 +112,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           padding: const EdgeInsets.only(left: 4, bottom: 12),
                           child: Text(
                             'Quick Actions',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                         _QuickActionTile(
@@ -150,6 +146,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           subtitle: 'Upload images and videos to Cloudinary',
                           color: const Color(0xFF6A1B9A),
                           onTap: () => Get.toNamed('/admin/upload-media'),
+                        ),
+                        const SizedBox(height: 10),
+                        _QuickActionTile(
+                          icon: Icons.cloud_upload_outlined,
+                          label: 'Upcomin event',
+                          subtitle: 'Upload images and videos to Cloudinary',
+                          color: const Color(0xFF6A1B9A),
+                          onTap: () => Get.toNamed('/admin/upcomin'),
                         ),
                       ],
                     ),
@@ -187,7 +191,10 @@ class _WelcomeHeader extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: isDark
-                  ? [AppColors.premiumDarkGradientStart, AppColors.premiumDarkGradientEnd]
+                  ? [
+                      AppColors.premiumDarkGradientStart,
+                      AppColors.premiumDarkGradientEnd,
+                    ]
                   : [AppColors.deepRed, AppColors.vermilion],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -195,8 +202,11 @@ class _WelcomeHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: (isDark ? AppColors.premiumDarkGradientStart : AppColors.deepRed)
-                    .withValues(alpha: 0.35),
+                color:
+                    (isDark
+                            ? AppColors.premiumDarkGradientStart
+                            : AppColors.deepRed)
+                        .withValues(alpha: 0.35),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
@@ -249,7 +259,10 @@ class _WelcomeHeader extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
@@ -257,7 +270,11 @@ class _WelcomeHeader extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.temple_hindu, color: Colors.white, size: 18),
+                    const Icon(
+                      Icons.temple_hindu,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '$totalPandals pandals managed',
@@ -514,9 +531,9 @@ class _QuickActionTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 12),
                     ),
                   ],
                 ),
@@ -524,7 +541,9 @@ class _QuickActionTile extends StatelessWidget {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ],
           ),
