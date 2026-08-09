@@ -142,7 +142,9 @@ class _DashboardStylePandalCard extends StatelessWidget {
             child: Material(
               color: const Color(0xFF8C1115),
               child: InkWell(
-                onTap: () => Get.toNamed('/pandal/${pandal.id}'),
+                onTap: pandal.isActive
+                    ? () => Get.toNamed('/pandal/${pandal.id}')
+                    : null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
