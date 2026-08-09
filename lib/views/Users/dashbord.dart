@@ -766,319 +766,216 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                 : '${distanceKm.toStringAsFixed(1)} km away';
 
             final cardContent = Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 16,
-                      spreadRadius: 1,
-                      offset: Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Color(0x18FFD889),
-                      blurRadius: 12,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadius),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                    offset: Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Color(0x18FFD889),
+                    blurRadius: 12,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
 
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(borderRadius),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(borderRadius),
 
-                  child: Material(
-                    color: darkRed,
+                child: Material(
+                  color: darkRed,
 
-                    child: InkWell(
-                      onTap: () => Get.toNamed('/pandal/${pandal.id}'),
+                  child: InkWell(
+                    onTap: () => Get.toNamed('/pandal/${pandal.id}'),
 
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
 
-                        children: [
-                          // ==============================
-                          // IMAGE SECTION
-                          // ==============================
-                          SizedBox(
-                            height: cardHeight * 0.53,
-                            width: double.infinity,
+                      children: [
+                        // ==============================
+                        // IMAGE SECTION
+                        // ==============================
+                        SizedBox(
+                          height: cardHeight * 0.53,
+                          width: double.infinity,
 
-                            child: Stack(
-                              fit: StackFit.expand,
+                          child: Stack(
+                            fit: StackFit.expand,
 
-                              children: [
-                                Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
+                            children: [
+                              Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
 
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null) {
-                                          return child;
-                                        }
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) {
+                                        return child;
+                                      }
 
-                                        return const ShimmerPlaceholder(
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          borderRadius: 0,
-                                        );
-                                      },
+                                      return const ShimmerPlaceholder(
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        borderRadius: 0,
+                                      );
+                                    },
 
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      decoration: const BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Color(0xFFC06F39),
-                                            Color(0xFF5C2516),
-                                          ],
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                        ),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Icon(
-                                        Icons.temple_hindu_rounded,
-                                        color: const Color(0xFFFFD889),
-                                        size: isSmallCard ? 38 : 48,
-                                      ),
-                                    );
-                                  },
-                                ),
-
-                                // Golden Top Line
-                                Positioned(
-                                  top: 0,
-                                  left: isSmallCard ? 12 : 18,
-                                  right: isSmallCard ? 12 : 18,
-                                  child: Container(
-                                    height: 2,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      gradient: const LinearGradient(
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
                                         colors: [
-                                          Colors.transparent,
-                                          Color(0xFFFFD889),
-                                          Colors.transparent,
+                                          Color(0xFFC06F39),
+                                          Color(0xFF5C2516),
                                         ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
                                       ),
                                     ),
-                                  ),
-                                ),
-
-                                // ==============================
-                                // FAVOURITE BUTTON
-                                // ==============================
-                                Positioned(
-                                  top: isSmallCard ? 7 : 9,
-                                  right: isSmallCard ? 7 : 9,
-
-                                  child: Material(
-                                    color: Colors.transparent,
-
-                                    child: InkWell(
-                                      onTap: !pandal.isActive || pandalIndex < 0
-                                          ? null
-                                          : () => shellController.toggleSaved(
-                                              pandalIndex,
-                                            ),
-
-                                      customBorder: const CircleBorder(),
-
-                                      child: Container(
-                                        width: bookmarkSize,
-                                        height: bookmarkSize,
-                                        padding: EdgeInsets.all(
-                                          isSmallCard ? 5 : 6,
-                                        ),
-
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xCC542111),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: const Color(0x66FFD889),
-                                            width: 1,
-                                          ),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Color(0x40000000),
-                                              blurRadius: 8,
-                                              offset: Offset(0, 3),
-                                            ),
-                                          ],
-                                        ),
-
-                                        child: Icon(
-                                          isFavorite
-                                              ? Icons.favorite_rounded
-                                              : Icons.favorite_border_rounded,
-                                          color: Colors.white,
-                                          size: isSmallCard ? 17 : 20,
-                                        ),
-                                      ),
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.temple_hindu_rounded,
+                                      color: const Color(0xFFFFD889),
+                                      size: isSmallCard ? 38 : 48,
                                     ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // ==============================
-                          // CONTENT SECTION
-                          // ==============================
-                          Expanded(
-                            child: Container(
-                              width: double.infinity,
-
-                              padding: EdgeInsets.fromLTRB(
-                                horizontalPadding,
-                                verticalPadding,
-                                horizontalPadding,
-                                isSmallCard ? 7 : 10,
+                                  );
+                                },
                               ),
 
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0xFFB31118),
-                                    Color(0xFF8C1115),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                              ),
-
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-
-                                children: [
-                                  // PANDAL NAME
-                                  Text(
-                                    pandal.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: titleFontSize,
-                                      height: 1.08,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.1,
-                                    ),
-                                  ),
-
-                                  // ==============================
-                                  // DISTANCE
-                                  // ==============================
-                                  if (_hasSelectedLocation) ...[
-                                    SizedBox(height: isSmallCard ? 4 : 6),
-
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.near_me_rounded,
-                                          color: const Color(0xFFFFD2C1),
-                                          size: metaIconSize,
-                                        ),
-
-                                        const SizedBox(width: 3),
-
-                                        Expanded(
-                                          child: Text(
-                                            distanceText,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-
-                                            style: TextStyle(
-                                              color: const Color(0xFFFFD2C1),
-                                              fontSize: metaFontSize,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
+                              // Golden Top Line
+                              Positioned(
+                                top: 0,
+                                left: isSmallCard ? 12 : 18,
+                                right: isSmallCard ? 12 : 18,
+                                child: Container(
+                                  height: 2,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Colors.transparent,
+                                        Color(0xFFFFD889),
+                                        Colors.transparent,
                                       ],
                                     ),
-                                  ],
-
-                                  const Spacer(),
-
-                                  // ==============================
-                                  // RATING
-                                  // ==============================
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: isSmallCard ? 5 : 7,
-                                            vertical: isSmallCard ? 3 : 4,
-                                          ),
-
-                                          decoration: BoxDecoration(
-                                            color: const Color(0x22FFD889),
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                            border: Border.all(
-                                              color: const Color(0x55FFD889),
-                                              width: 0.8,
-                                            ),
-                                          ),
-
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-
-                                            children: [
-                                              Icon(
-                                                Icons.star_rounded,
-                                                color: const Color(0xFFFFC34B),
-                                                size: isSmallCard ? 13 : 15,
-                                              ),
-
-                                              const SizedBox(width: 2),
-
-                                              Flexible(
-                                                child: Text(
-                                                  pandal.averageRating
-                                                      .toStringAsFixed(1),
-
-                                                  maxLines: 1,
-
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: isSmallCard
-                                                        ? 10
-                                                        : 11.5,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                      const Spacer(),
-
-                                      Icon(
-                                        Icons.arrow_forward_rounded,
-                                        color: const Color(0xFFFFD2C1),
-                                        size: isSmallCard ? 15 : 17,
-                                      ),
-                                    ],
                                   ),
+                                ),
+                              ),
 
-                                  SizedBox(height: isSmallCard ? 5 : 8),
+                              // ==============================
+                              // FAVOURITE BUTTON
+                              // ==============================
+                              Positioned(
+                                top: isSmallCard ? 7 : 9,
+                                right: isSmallCard ? 7 : 9,
 
-                                  // ==============================
-                                  // LOCATION
-                                  // ==============================
+                                child: Material(
+                                  color: Colors.transparent,
+
+                                  child: InkWell(
+                                    onTap: !pandal.isActive || pandalIndex < 0
+                                        ? null
+                                        : () => shellController.toggleSaved(
+                                            pandalIndex,
+                                          ),
+
+                                    customBorder: const CircleBorder(),
+
+                                    child: Container(
+                                      width: bookmarkSize,
+                                      height: bookmarkSize,
+                                      padding: EdgeInsets.all(
+                                        isSmallCard ? 5 : 6,
+                                      ),
+
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xCC542111),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(0x66FFD889),
+                                          width: 1,
+                                        ),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Color(0x40000000),
+                                            blurRadius: 8,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+
+                                      child: Icon(
+                                        isFavorite
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                        color: Colors.white,
+                                        size: isSmallCard ? 17 : 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // ==============================
+                        // CONTENT SECTION
+                        // ==============================
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+
+                            padding: EdgeInsets.fromLTRB(
+                              horizontalPadding,
+                              verticalPadding,
+                              horizontalPadding,
+                              isSmallCard ? 7 : 10,
+                            ),
+
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFB31118), Color(0xFF8C1115)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                // PANDAL NAME
+                                Text(
+                                  pandal.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: titleFontSize,
+                                    height: 1.08,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.1,
+                                  ),
+                                ),
+
+                                // ==============================
+                                // DISTANCE
+                                // ==============================
+                                if (_hasSelectedLocation) ...[
+                                  SizedBox(height: isSmallCard ? 4 : 6),
+
                                   Row(
                                     children: [
                                       Icon(
-                                        Icons.location_on_rounded,
+                                        Icons.near_me_rounded,
                                         color: const Color(0xFFFFD2C1),
                                         size: metaIconSize,
                                       ),
@@ -1087,29 +984,129 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
                                       Expanded(
                                         child: Text(
-                                          pandal.area,
+                                          distanceText,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
 
                                           style: TextStyle(
                                             color: const Color(0xFFFFD2C1),
                                             fontSize: metaFontSize,
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ],
-                              ),
+
+                                const Spacer(),
+
+                                // ==============================
+                                // RATING
+                                // ==============================
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: isSmallCard ? 5 : 7,
+                                          vertical: isSmallCard ? 3 : 4,
+                                        ),
+
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x22FFD889),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0x55FFD889),
+                                            width: 0.8,
+                                          ),
+                                        ),
+
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+
+                                          children: [
+                                            Icon(
+                                              Icons.star_rounded,
+                                              color: const Color(0xFFFFC34B),
+                                              size: isSmallCard ? 13 : 15,
+                                            ),
+
+                                            const SizedBox(width: 2),
+
+                                            Flexible(
+                                              child: Text(
+                                                pandal.averageRating
+                                                    .toStringAsFixed(1),
+
+                                                maxLines: 1,
+
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: isSmallCard
+                                                      ? 10
+                                                      : 11.5,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    const Spacer(),
+
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: const Color(0xFFFFD2C1),
+                                      size: isSmallCard ? 15 : 17,
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: isSmallCard ? 5 : 8),
+
+                                // ==============================
+                                // LOCATION
+                                // ==============================
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.location_on_rounded,
+                                      color: const Color(0xFFFFD2C1),
+                                      size: metaIconSize,
+                                    ),
+
+                                    const SizedBox(width: 3),
+
+                                    Expanded(
+                                      child: Text(
+                                        pandal.area,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+
+                                        style: TextStyle(
+                                          color: const Color(0xFFFFD2C1),
+                                          fontSize: metaFontSize,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
+              ),
+            );
 
             if (pandal.isActive) {
               return cardContent;
@@ -1117,10 +1114,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
             return Stack(
               children: [
-                Opacity(
-                  opacity: 0.42,
-                  child: cardContent,
-                ),
+                Opacity(opacity: 0.42, child: cardContent),
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Center(

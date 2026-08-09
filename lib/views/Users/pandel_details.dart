@@ -186,25 +186,31 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                     style: TextStyle(color: Color(0xFF542111), fontSize: 14),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      final starValue = index + 1.0;
-                      return IconButton(
-                        icon: Icon(
-                          selectedRating >= starValue
-                              ? Icons.star_rounded
-                              : Icons.star_border_rounded,
-                          color: const Color(0xFFFFC34B),
-                          size: 40,
-                        ),
-                        onPressed: () {
-                          setStateDialog(() {
-                            selectedRating = starValue;
-                          });
-                        },
-                      );
-                    }),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        final starValue = index + 1.0;
+                        return GestureDetector(
+                          onTap: () {
+                            setStateDialog(() {
+                              selectedRating = starValue;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(
+                              selectedRating >= starValue
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: const Color(0xFFFFC34B),
+                              size: 36,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
                   ),
                 ],
               ),
