@@ -20,6 +20,7 @@ class PandalModel {
     required this.isActive,
     required this.averageRating,
     required this.totalReviews,
+    required this.totalRating,
     required this.thumbnailUrl,
     required this.images,
     required this.videos,
@@ -48,6 +49,7 @@ class PandalModel {
   final bool isActive;
   final double averageRating;
   final int totalReviews;
+  final double totalRating;
   final String thumbnailUrl;
   final List<String> images;
   final List<String> videos;
@@ -77,6 +79,7 @@ class PandalModel {
       isActive: true,
       averageRating: 0,
       totalReviews: 0,
+      totalRating: 0,
       thumbnailUrl: '',
       images: [],
       videos: [],
@@ -112,6 +115,7 @@ class PandalModel {
       isActive: map['isActive'] as bool? ?? true,
       averageRating: (map['averageRating'] as num?)?.toDouble() ?? 0,
       totalReviews: (map['totalReviews'] as num?)?.toInt() ?? 0,
+      totalRating: (map['totalRating'] as num?)?.toDouble() ?? 0,
       thumbnailUrl: map['thumbnailUrl'] as String? ?? '',
       images: List<String>.from(map['images'] as List<dynamic>? ?? const []),
       videos: List<String>.from(map['videos'] as List<dynamic>? ?? const []),
@@ -145,6 +149,7 @@ class PandalModel {
       'isActive': isActive,
       'averageRating': averageRating,
       'totalReviews': totalReviews,
+      'totalRating': totalRating,
       'thumbnailUrl': thumbnailUrl,
       'images': images,
       'videos': videos,
@@ -179,6 +184,7 @@ class PandalModel {
     bool? isActive,
     double? averageRating,
     int? totalReviews,
+    double? totalRating,
     String? thumbnailUrl,
     List<String>? images,
     List<String>? videos,
@@ -207,6 +213,7 @@ class PandalModel {
       isActive: isActive ?? this.isActive,
       averageRating: averageRating ?? this.averageRating,
       totalReviews: totalReviews ?? this.totalReviews,
+      totalRating: totalRating ?? this.totalRating,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       images: images ?? this.images,
       videos: videos ?? this.videos,
