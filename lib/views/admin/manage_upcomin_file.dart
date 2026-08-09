@@ -33,7 +33,7 @@ class ManageUpcomingFilePage extends StatelessWidget {
             return ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: 4,
-              itemBuilder: (_, __) => _ShimmerCard(),
+              itemBuilder: (_, _) => _ShimmerCard(),
             );
           }
 
@@ -316,7 +316,7 @@ class _ShimmerCardState extends State<_ShimmerCard>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) {
+      builder: (_, _) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           height: 88,
