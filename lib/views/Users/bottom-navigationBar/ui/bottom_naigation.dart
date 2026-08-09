@@ -5,6 +5,7 @@ import 'package:durga_puja_pandel/views/Users/map.dart';
 import 'package:durga_puja_pandel/views/Users/bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'package:durga_puja_pandel/controllers/map_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +24,57 @@ class _AppShellState extends State<AppShell> {
       context.read<MapController>().clearRoute();
     }
     shellController.setIndex(nextIndex);
+  }
+
+  Future<bool?> _showExitConfirmationDialog(BuildContext context) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFFBF2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFFFFD889), width: 1.5),
+          ),
+          title: const Center(
+            child: Text(
+              'Exit App',
+              style: TextStyle(
+                color: Color(0xFF8C1115),
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Serif',
+              ),
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to exit the app?',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF542111), fontSize: 14),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFF8D8580), fontWeight: FontWeight.bold),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8C1115),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -45,22 +97,36 @@ class _AppShellState extends State<AppShell> {
       FavouritesScreen(saved: saved, onSaved: shellController.toggleSaved),
     ];
 
-    return Scaffold(
-      key: _scaffoldKey,
-      extendBody: true,
-      drawer: _buildDrawer(shellController),
-      backgroundColor: const Color(0xFFE50914),
-      body: SafeArea(
-        top: index != 0,
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: IndexedStack(index: index, children: screens),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final handled = shellController.handleBackPress();
+        if (handled) return;
+
+        final shouldExit = await _showExitConfirmationDialog(context);
+        if (shouldExit == true) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        extendBody: true,
+        drawer: _buildDrawer(shellController),
+        backgroundColor: const Color(0xFFE50914),
+        body: SafeArea(
+          top: index != 0,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: IndexedStack(index: index, children: screens),
+            ),
           ),
         ),
+        bottomNavigationBar: _buildCustomBottomNavBar(shellController),
       ),
-      bottomNavigationBar: _buildCustomBottomNavBar(shellController),
     );
   }
 

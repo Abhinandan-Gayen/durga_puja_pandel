@@ -22,9 +22,23 @@ class AppShellController extends ChangeNotifier {
   int get selectedIndex => _selectedIndex;
   Set<int> get saved => _saved;
 
+  final List<int> _history = <int>[0];
+
   void setIndex(int index) {
+    if (_selectedIndex == index) return;
     _selectedIndex = index;
+    _history.add(index);
     notifyListeners();
+  }
+
+  bool handleBackPress() {
+    if (_history.length > 1) {
+      _history.removeLast();
+      _selectedIndex = _history.last;
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
   void toggleSaved(int value) {
