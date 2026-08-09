@@ -21,4 +21,5 @@ class RouteNames {
   static const managePandals = 'managePandals';
   static const uploadMedia = 'uploadMedia';
   static const upcomin = 'upcoming';
+  static const manageupcomin = 'manageupcomin';
 }

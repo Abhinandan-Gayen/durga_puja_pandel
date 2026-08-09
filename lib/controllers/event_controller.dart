@@ -104,6 +104,32 @@ class EventController extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateEvent({
+    required String id,
+    required String month,
+    required String date,
+    required String title,
+    required String subtitle,
+    required String time,
+    required bool notification,
+  }) async {
+    try {
+      await _eventCollection.doc(id).update({
+        'month': month.trim().toUpperCase(),
+        'date': date.trim(),
+        'title': title.trim(),
+        'subtitle': subtitle.trim(),
+        'time': time.trim(),
+        'notification': notification,
+      });
+      return true;
+    } catch (error) {
+      errorMessage = error.toString();
+      _safeNotifyListeners();
+      return false;
+    }
+  }
+
   void _safeNotifyListeners() {
     if (!_disposed) {
       notifyListeners();
