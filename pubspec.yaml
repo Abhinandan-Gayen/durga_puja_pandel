@@ -30,11 +30,20 @@ dependencies:
   get: ^4.7.3
   onesignal_flutter: ^5.6.7
   flutter_local_notifications: ^22.3.0
+  
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  icons_launcher: ^3.1.0
+icons_launcher:
+  image_path: "assets/logo.webp"
+  platforms:
+    android:
+      enable: true
+    ios:
+      enable: true
 
 flutter:
   uses-material-design: true
