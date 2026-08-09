@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import 'shimmer.dart';
+
 class PandalMediaSlider extends StatelessWidget {
   const PandalMediaSlider({
     super.key,
@@ -40,8 +42,11 @@ class PandalMediaSlider extends StatelessWidget {
           return CachedNetworkImage(
             imageUrl: url,
             fit: BoxFit.cover,
-            placeholder: (_, _) =>
-                const Center(child: CircularProgressIndicator()),
+            placeholder: (_, _) => const ShimmerPlaceholder(
+              width: double.infinity,
+              height: double.infinity,
+              borderRadius: 0,
+            ),
             errorWidget: (_, _, _) => const Icon(Icons.broken_image),
           );
         },

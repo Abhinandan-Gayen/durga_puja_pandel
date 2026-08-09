@@ -7,6 +7,7 @@ import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'favourite_route_map_screen.dart';
 import '../widgets/pandel.dart';
 import '../widgets/pandal_media_slider.dart';
+import '../widgets/shimmer.dart';
 
 class PandalDetailScreen extends StatelessWidget {
   const PandalDetailScreen({super.key});
@@ -210,13 +211,10 @@ class PandalDetailScreen extends StatelessWidget {
                                     fit: BoxFit.cover,
                                     loadingBuilder: (context, child, progress) {
                                       if (progress == null) return child;
-                                      return const ColoredBox(
-                                        color: Color(0xFFFFE6BE),
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                          ),
-                                        ),
+                                      return const ShimmerPlaceholder(
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        borderRadius: 0,
                                       );
                                     },
                                     errorBuilder: (_, _, _) => const ColoredBox(
