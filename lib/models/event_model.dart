@@ -7,6 +7,7 @@ class EventModel {
   final String title;
   final String subtitle;
   final String time;
+  final bool notification;
   final DateTime? createdAt;
 
   EventModel({
@@ -16,6 +17,7 @@ class EventModel {
     required this.title,
     required this.subtitle,
     required this.time,
+    this.notification = true,
     this.createdAt,
   });
 
@@ -28,6 +30,7 @@ class EventModel {
       title: data['title'] ?? '',
       subtitle: data['subtitle'] ?? '',
       time: data['time'] ?? '',
+      notification: data['notification'] ?? true,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
@@ -39,6 +42,7 @@ class EventModel {
       'title': title,
       'subtitle': subtitle,
       'time': time,
+      'notification': notification,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }

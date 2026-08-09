@@ -92,9 +92,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return const Center(
-          child: CircularProgressIndicator(
-            color: primaryRed,
-          ),
+          child: CircularProgressIndicator(color: primaryRed),
         );
       },
     );
@@ -105,6 +103,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
       title: titleController.text,
       subtitle: subtitleController.text,
       time: '${selectedTime.format(context)} Onwards',
+      notification: notificationEnabled,
     );
 
     // Pop the loading dialog

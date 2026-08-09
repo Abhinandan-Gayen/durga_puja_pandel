@@ -57,6 +57,7 @@ class EventController extends ChangeNotifier {
     required String title,
     required String subtitle,
     required String time,
+    bool notification = true,
   }) async {
     final String cleanMonth = month.trim();
     final String cleanDate = date.trim();
@@ -79,6 +80,7 @@ class EventController extends ChangeNotifier {
         'title': cleanTitle,
         'subtitle': subtitle.trim(),
         'time': time.trim(),
+        'notification': notification,
         'createdAt': FieldValue.serverTimestamp(),
       });
       return true;
