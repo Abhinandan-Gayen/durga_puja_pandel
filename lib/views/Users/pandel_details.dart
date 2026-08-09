@@ -41,6 +41,7 @@ class PandalDetailScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFAF6F0),
       body: Stack(
         children: [
           // Top Image Background Placeholder
@@ -289,27 +290,6 @@ class PandalDetailScreen extends StatelessWidget {
                     ],
                     const SizedBox(height: 28),
 
-                    // Address, Timings, Puja Time List
-                    // _buildListTile(
-                    //   icon: Icons.map_outlined,
-                    //   title: 'Address',
-                    //   subtitle: pandal.address,
-                    // ),
-                    // _buildDivider(),
-                    // _buildListTile(
-                    //   icon: Icons.schedule,
-                    //   title: 'Timings',
-                    //   subtitle:
-                    //       '${pandal.openingTime.isEmpty ? 'Not specified' : pandal.openingTime} – ${pandal.closingTime.isEmpty ? 'Not specified' : pandal.closingTime}',
-                    // ),
-                    // _buildDivider(),
-                    // _buildListTile(
-                    //   icon: Icons.notifications_active_outlined,
-                    //   title: 'Coordinates',
-                    //   subtitle: '${pandal.latitude}, ${pandal.longitude}',
-                    // ),
-
-                    // Extra space at bottom for the fixed action bar
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -874,9 +854,7 @@ class _GestureZoomImageState extends State<_GestureZoomImage> {
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
               return const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(color: Colors.white),
               );
             },
             errorBuilder: (_, _, _) => const Icon(

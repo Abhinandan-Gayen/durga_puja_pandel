@@ -12,6 +12,7 @@ import '../../core/utils/distance_helper.dart';
 import '../../models/pandal_model.dart';
 import '../admin/location_picker_screen.dart';
 import '../admin/slider-image-post/controller/slider_controller.dart';
+import '../widgets/shimmer.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'location_pandals_screen.dart';
 
@@ -548,12 +549,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           ),
           // const SizedBox(height: 12),
           if (pandalController.isLoading && pandalController.pandals.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 70),
-              child: Center(
-                child: CircularProgressIndicator(color: Color(0xFFE50914)),
-              ),
-            )
+            _buildFeaturedPandalsShimmer()
           else
             _buildFeaturedPandalsGrid(displayedPandals),
 
@@ -843,27 +839,10 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
                                           return child;
                                         }
 
-                                        return Container(
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Color(0xFFC06F39),
-                                                Color(0xFF5C2516),
-                                              ],
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                            ),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: SizedBox(
-                                            width: isSmallCard ? 22 : 26,
-                                            height: isSmallCard ? 22 : 26,
-                                            child:
-                                                const CircularProgressIndicator(
-                                                  color: Color(0xFFFFD889),
-                                                  strokeWidth: 2.5,
-                                                ),
-                                          ),
+                                        return const ShimmerPlaceholder(
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          borderRadius: 0,
                                         );
                                       },
 
@@ -1307,6 +1286,16 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         .toList();
 
     if (activeSliders.isEmpty) {
+      if (sliderController.isLoading) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: ShimmerPlaceholder(
+            width: double.infinity,
+            height: 160,
+            borderRadius: 16,
+          ),
+        );
+      }
       return const SizedBox.shrink();
     }
 
@@ -1385,6 +1374,49 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFeaturedPandalsShimmer() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double availableWidth = constraints.maxWidth;
+        int crossAxisCount = availableWidth >= 1100
+            ? 4
+            : (availableWidth >= 700 ? 3 : 2);
+        double spacing = availableWidth >= 1100
+            ? 16
+            : (availableWidth >= 700
+                ? 14
+                : (availableWidth < 360 ? 8 : 12));
+        final double cardWidth =
+            (availableWidth - ((crossAxisCount - 1) * spacing)) /
+            crossAxisCount;
+        final double cardHeight = cardWidth < 170
+            ? 270
+            : (cardWidth > 230 ? 315 : 290);
+        final double borderRadius = cardWidth < 170 ? 16 : 20;
+
+        return GridView.builder(
+          padding: const EdgeInsets.only(top: 12),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            mainAxisExtent: cardHeight,
+          ),
+          itemCount: 4,
+          itemBuilder: (context, index) {
+            return ShimmerPlaceholder(
+              width: double.infinity,
+              height: cardHeight,
+              borderRadius: borderRadius,
+            );
+          },
+        );
+      },
     );
   }
 }
