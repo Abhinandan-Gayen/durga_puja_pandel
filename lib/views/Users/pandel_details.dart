@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/pandal_controller.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
@@ -9,8 +12,259 @@ import '../widgets/pandel.dart';
 import '../widgets/pandal_media_slider.dart';
 import '../widgets/shimmer.dart';
 
-class PandalDetailScreen extends StatelessWidget {
+class PandalDetailScreen extends StatefulWidget {
   const PandalDetailScreen({super.key});
+
+  @override
+  State<PandalDetailScreen> createState() => _PandalDetailScreenState();
+}
+
+class _PandalDetailScreenState extends State<PandalDetailScreen> {
+  bool _hasRated = false;
+  bool _checkingRating = true;
+  bool _shouldAllowPop = false;
+  String _userId = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserRatingStatus();
+  }
+
+  Future<String> _getOrGenerateUserId() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      return currentUser.uid;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    String? visitorId = prefs.getString('visitor_id');
+    if (visitorId == null) {
+      visitorId = 'visitor_${DateTime.now().microsecondsSinceEpoch}';
+      await prefs.setString('visitor_id', visitorId);
+    }
+    return visitorId;
+  }
+
+  Future<void> _checkUserRatingStatus() async {
+    final pandalId = Get.parameters['id'] ?? '';
+    if (pandalId.isEmpty) return;
+
+    try {
+      final userId = await _getOrGenerateUserId();
+      if (mounted) {
+        setState(() => _userId = userId);
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final localRated = prefs.getBool('rated_$pandalId') ?? false;
+      if (localRated) {
+        if (mounted) {
+          setState(() {
+            _hasRated = true;
+            _checkingRating = false;
+          });
+        }
+        return;
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('pandals')
+          .doc(pandalId)
+          .collection('ratings')
+          .doc(userId)
+          .get();
+
+      if (doc.exists) {
+        await prefs.setBool('rated_$pandalId', true);
+        if (mounted) {
+          setState(() {
+            _hasRated = true;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking rating status: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _checkingRating = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitRating(String pandalId, double ratingValue) async {
+    try {
+      final userId = _userId.isNotEmpty ? _userId : await _getOrGenerateUserId();
+      final pandalRef = FirebaseFirestore.instance.collection('pandals').doc(pandalId);
+      final ratingRef = pandalRef.collection('ratings').doc(userId);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final pandalSnapshot = await transaction.get(pandalRef);
+        if (!pandalSnapshot.exists) return;
+
+        final data = pandalSnapshot.data()!;
+        final double currentTotalRating = (data['totalRating'] as num?)?.toDouble() ?? 0.0;
+        final int currentTotalReviews = (data['totalReviews'] as num?)?.toInt() ?? 0;
+
+        final double newTotalRating = currentTotalRating + ratingValue;
+        final int newTotalReviews = currentTotalReviews + 1;
+        final double newAverageRating = newTotalRating / newTotalReviews;
+
+        transaction.set(ratingRef, {
+          'userId': userId,
+          'rating': ratingValue,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        transaction.update(pandalRef, {
+          'totalRating': newTotalRating,
+          'totalReviews': newTotalReviews,
+          'averageRating': newAverageRating,
+        });
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('rated_$pandalId', true);
+
+      if (mounted) {
+        setState(() {
+          _hasRated = true;
+        });
+      }
+
+      Get.snackbar(
+        'Thank You!',
+        'Your rating has been submitted successfully.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF2E7D32),
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      debugPrint('Error submitting rating: $e');
+      Get.snackbar(
+        'Error',
+        'Could not submit rating. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFC62828),
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> _showRatingDialog(BuildContext context, String pandalId) async {
+    double selectedRating = 0;
+    
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFFFFFBF2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: Color(0xFFFFD889), width: 1.5),
+              ),
+              title: const Center(
+                child: Text(
+                  'Rate this Pandal',
+                  style: TextStyle(
+                    color: Color(0xFF8C1115),
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Serif',
+                  ),
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'How was your experience visiting this pandal?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF542111), fontSize: 14),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final starValue = index + 1.0;
+                      return IconButton(
+                        icon: Icon(
+                          selectedRating >= starValue
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: const Color(0xFFFFC34B),
+                          size: 40,
+                        ),
+                        onPressed: () {
+                          setStateDialog(() {
+                            selectedRating = starValue;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actionsAlignment: MainAxisAlignment.spaceBetween,
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text(
+                    'Maybe Later',
+                    style: TextStyle(color: Color(0xFF8D8580)),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: selectedRating == 0
+                      ? null
+                      : () async {
+                          Navigator.of(dialogContext).pop();
+                          await _submitRating(pandalId, selectedRating);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8C1115),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleExit(String pandalId) async {
+    if (_hasRated || _checkingRating) {
+      setState(() => _shouldAllowPop = true);
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Get.offAllNamed('/home');
+      }
+      return;
+    }
+
+    await _showRatingDialog(context, pandalId);
+
+    if (!mounted) return;
+    setState(() => _shouldAllowPop = true);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Get.offAllNamed('/home');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +294,13 @@ class PandalDetailScreen extends StatelessWidget {
       if (pandalIndex >= 0) shellController.toggleSaved(pandalIndex);
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: _shouldAllowPop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _handleExit(pandalId);
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFFAF6F0),
       body: Stack(
         children: [
@@ -311,15 +571,7 @@ class PandalDetailScreen extends StatelessWidget {
                   children: [
                     _buildTopActionButton(
                       icon: Icons.arrow_back_rounded,
-                      onTap: () {
-                        debugPrint('BACK BUTTON CLICKED');
-
-                        if (Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        } else {
-                          Get.offAllNamed('/home');
-                        }
-                      },
+                      onTap: () => _handleExit(pandalId),
                     ),
 
                     _buildTopActionButton(
@@ -363,8 +615,9 @@ class PandalDetailScreen extends StatelessWidget {
         onFavorite: toggleFavorite,
         isFavorite: isFavorite,
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _showImagePreview(
     BuildContext context,
