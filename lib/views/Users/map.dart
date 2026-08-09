@@ -1,6 +1,7 @@
 import 'package:durga_puja_pandel/controllers/map_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -288,8 +289,14 @@ class _CardScreenState extends State<CardScreen> {
                             horizontal: 6,
                             vertical: 6,
                           ),
-                          child: MapPandalCard(
-                            title: pandal['title'],
+                          child: GestureDetector(
+                            onTap: () {
+                              if (pandal['id'] != null) {
+                                Get.toNamed('/pandal/${pandal['id']}');
+                              }
+                            },
+                            child: MapPandalCard(
+                              title: pandal['title'],
                             location: pandal['location'],
                             distance: pandal['distance'],
                             rating: pandal['rating'],
@@ -320,8 +327,9 @@ class _CardScreenState extends State<CardScreen> {
                               _showDirections(pandal, index);
                             },
                           ),
-                        );
-                      },
+                        ),
+                      );
+                    },
                     ),
                   ),
 

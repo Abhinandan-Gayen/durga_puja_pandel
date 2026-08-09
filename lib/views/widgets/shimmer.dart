@@ -44,9 +44,9 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
           shaderCallback: (bounds) {
             return LinearGradient(
               colors: const [
-                Color(0xFFEBEBF4),
-                Color(0xFFF4F4F4),
-                Color(0xFFEBEBF4),
+                Color(0xFFF0E5D3),
+                Color(0xFFFAF3E6),
+                Color(0xFFF0E5D3),
               ],
               stops: const [
                 0.1,
@@ -98,7 +98,7 @@ class ShimmerPlaceholder extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.black26, // Base color for ShaderMask
+          color: const Color(0xFFEADFCD), // Warm cream base color matching the theme
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
