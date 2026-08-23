@@ -67,6 +67,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       backgroundColor: const Color(0xFFFFF8E9),
       appBar: AppBar(
         backgroundColor: const Color(0xFFE50914),
+        surfaceTintColor: Color(0xFFE50914),
         elevation: 3,
         shadowColor: Colors.black.withValues(alpha: 0.15),
         centerTitle: true,
@@ -78,13 +79,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Color(0xFFE50914),
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
-          systemNavigationBarColor: Colors.white,
-          systemNavigationBarIconBrightness: Brightness.dark,
-        ),
+        // systemOverlayStyle: const SystemUiOverlayStyle(
+        //   statusBarColor: Color(0xFFE50914),
+        //   statusBarIconBrightness: Brightness.light,
+        //   statusBarBrightness: Brightness.dark,
+        //   systemNavigationBarColor: Colors.white,
+        //   systemNavigationBarIconBrightness: Brightness.dark,
+        // ),
       ),
       body: RefreshIndicator(
         onRefresh: controller.fetchActivePandals,
@@ -136,8 +137,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     : pandal.images.isNotEmpty
                     ? pandal.images.first
                     : '';
-                final distanceKm = _userLatitude == null ||
-                        _userLongitude == null
+                final distanceKm =
+                    _userLatitude == null || _userLongitude == null
                     ? null
                     : DistanceHelper.calculateDistanceInKm(
                         _userLatitude!,

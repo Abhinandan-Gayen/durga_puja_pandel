@@ -214,7 +214,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
       ),
     );
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value:  SystemUiOverlayStyle(
         statusBarColor: Color(0xFFE50914),
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
@@ -298,11 +298,11 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             collapseMode: CollapseMode.parallax,
             background: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFD71319), Color(0xFFAA080D)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
+                // gradient: LinearGradient(
+                //   colors: [Color(0xFFD71319), Color(0xFFAA080D)],
+                //   begin: Alignment.topCenter,
+                //   end: Alignment.bottomCenter,
+                // ),
               ),
               child: SafeArea(
                 bottom: false,

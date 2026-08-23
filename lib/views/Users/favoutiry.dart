@@ -67,6 +67,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
       backgroundColor: const Color(0xFFFFF8E9),
       appBar: AppBar(
         backgroundColor: const Color(0xFFE50914),
+        surfaceTintColor: Color(0xFFE50914),
         elevation: 3,
         shadowColor: Colors.black.withValues(alpha: 0.15),
         centerTitle: true,
@@ -78,13 +79,13 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Color(0xFFE50914),
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
-          systemNavigationBarColor: Colors.white,
-          systemNavigationBarIconBrightness: Brightness.dark,
-        ),
+        // systemOverlayStyle: const SystemUiOverlayStyle(
+        //   statusBarColor: Color(0xFFE50914),
+        //   statusBarIconBrightness: Brightness.light,
+        //   statusBarBrightness: Brightness.dark,
+        //   systemNavigationBarColor: Colors.white,
+        //   systemNavigationBarIconBrightness: Brightness.dark,
+        // ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -162,8 +163,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                   : firebasePandal.images.isNotEmpty
                   ? firebasePandal.images.first
                   : '';
-              final distanceKm = _userLatitude == null ||
-                      _userLongitude == null
+              final distanceKm = _userLatitude == null || _userLongitude == null
                   ? null
                   : DistanceHelper.calculateDistanceInKm(
                       _userLatitude!,
