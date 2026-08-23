@@ -94,7 +94,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
     }
   }
 
-  Future<bool> _submitRating(String pandalId, double ratingValue) async {
+  Future<bool> _submitRating(String pandalId, double ratingValue, {String reviewText = ''}) async {
     try {
       final userId = _userId.isNotEmpty
           ? _userId
@@ -121,6 +121,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
         transaction.set(ratingRef, {
           'userId': userId,
           'rating': ratingValue,
+          'reviewText': reviewText,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -164,6 +165,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
   Future<void> _showRatingDialog(BuildContext context, String pandalId) async {
     double selectedRating = 0;
     bool isSubmitting = false;
+    final reviewController = TextEditingController();
 
     await showDialog<void>(
       context: context,
@@ -187,44 +189,72 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                   ),
                 ),
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'How was your experience visiting this pandal?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF542111), fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (index) {
-                        final starValue = index + 1.0;
-                        return GestureDetector(
-                          onTap: isSubmitting
-                              ? null
-                              : () {
-                                  setStateDialog(() {
-                                    selectedRating = starValue;
-                                  });
-                                },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Icon(
-                              selectedRating >= starValue
-                                  ? Icons.star_rounded
-                                  : Icons.star_border_rounded,
-                              color: const Color(0xFFFFC34B),
-                              size: 36,
-                            ),
-                          ),
-                        );
-                      }),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'How was your experience visiting this pandal?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Color(0xFF542111), fontSize: 14),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          final starValue = index + 1.0;
+                          return GestureDetector(
+                            onTap: isSubmitting
+                                ? null
+                                : () {
+                                    setStateDialog(() {
+                                      selectedRating = starValue;
+                                    });
+                                  },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                selectedRating >= starValue
+                                    ? Icons.star_rounded
+                                    : Icons.star_border_rounded,
+                                color: const Color(0xFFFFC34B),
+                                size: 36,
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: reviewController,
+                      maxLines: 3,
+                      enabled: !isSubmitting,
+                      style: const TextStyle(color: Color(0xFF542111), fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Share your experience (optional)...',
+                        hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.brown.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.brown.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFFFD889), width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               actionsAlignment: MainAxisAlignment.spaceBetween,
               actions: [
@@ -246,7 +276,11 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                           setStateDialog(() {
                             isSubmitting = true;
                           });
-                          final success = await _submitRating(pandalId, selectedRating);
+                          final success = await _submitRating(
+                            pandalId,
+                            selectedRating,
+                            reviewText: reviewController.text.trim(),
+                          );
                           if (success) {
                             if (dialogContext.mounted) {
                               Navigator.of(dialogContext).pop();
@@ -282,6 +316,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
         );
       },
     );
+    reviewController.dispose();
   }
 
   Future<void> _handleExit(String pandalId) async {
@@ -1044,6 +1079,7 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                 final String userId = data['userId'] as String? ?? 'Anonymous';
                 final double ratingVal =
                     (data['rating'] as num?)?.toDouble() ?? 0.0;
+                final String reviewText = data['reviewText'] as String? ?? '';
                 final Timestamp? ts = data['createdAt'] as Timestamp?;
                 final DateTime? dt = ts?.toDate();
                 final String dateStr = dt != null
@@ -1091,6 +1127,17 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
                         );
                       }),
                     ),
+                    if (reviewText.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        reviewText,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF542111),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ],
                 );
               },
