@@ -8,9 +8,10 @@ import '../widgets/loading_widget.dart';
 import 'add_pandal_screen.dart';
 
 class EditPandalScreen extends StatefulWidget {
-  const EditPandalScreen({super.key, required this.pandalId});
+  const EditPandalScreen({super.key, required this.pandalId, this.isSlider = false});
 
   final String pandalId;
+  final bool isSlider;
 
   @override
   State<EditPandalScreen> createState() => _EditPandalScreenState();
@@ -27,8 +28,14 @@ class _EditPandalScreenState extends State<EditPandalScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final admin = context.read<AdminPandalController>();
-      if (admin.adminPandals.isEmpty) {
-        admin.fetchAllPandalsForAdmin();
+      if (widget.isSlider) {
+        if (admin.adminSliders.isEmpty) {
+          admin.fetchAllSliderPandals();
+        }
+      } else {
+        if (admin.adminPandals.isEmpty) {
+          admin.fetchAllPandalsForAdmin();
+        }
       }
     });
   }
@@ -37,9 +44,9 @@ class _EditPandalScreenState extends State<EditPandalScreen> {
   Widget build(BuildContext context) {
     return Consumer<AdminPandalController>(
       builder: (context, admin, _) {
-        final pandal = _findPandal(admin.adminPandals);
+        final pandal = widget.isSlider ? _findPandal(admin.adminSliders) : _findPandal(admin.adminPandals);
         if (pandal != null) {
-          return PandalFormScreen(initialPandal: pandal);
+          return PandalFormScreen(initialPandal: pandal, isSlider: widget.isSlider);
         }
         if (admin.isLoading) {
           return const Scaffold(

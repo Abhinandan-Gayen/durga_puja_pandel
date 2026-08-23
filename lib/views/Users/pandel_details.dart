@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/pandal_controller.dart';
+import '../../models/pandal_model.dart';
+import '../../views/admin/slider-image-post/controller/slider_controller.dart';
 import 'bottom-navigationBar/controller/botom_navigation_controller.dart';
 import 'favourite_route_map_screen.dart';
 import '../widgets/pandel.dart';
@@ -344,18 +346,36 @@ class _PandalDetailScreenState extends State<PandalDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final pandalId = Get.parameters['id'] ?? '';
+    final isSlider = Get.parameters['isSlider'] == 'true';
     final controller = context.watch<PandalController>();
-    final pandal = controller.getPandalById(pandalId);
-    if (pandal == null) {
+    final sliderController = context.watch<SliderController>();
+    final PandalModel? pandalNull;
+
+    if (isSlider) {
+      PandalModel? found;
+      for (final s in sliderController.sliderPandals) {
+        if (s.id == pandalId) {
+          found = s;
+          break;
+        }
+      }
+      pandalNull = found;
+    } else {
+      pandalNull = controller.getPandalById(pandalId);
+    }
+
+    if (pandalNull == null) {
       return Scaffold(
         appBar: AppBar(),
         body: Center(
-          child: controller.isLoading
+          child: (controller.isLoading || sliderController.isLoading)
               ? const CircularProgressIndicator()
               : const Text('Pandal not found'),
         ),
       );
     }
+
+    final PandalModel pandal = pandalNull;
     final heroImages = <String>[
       if (pandal.thumbnailUrl.isNotEmpty) pandal.thumbnailUrl,
     ];

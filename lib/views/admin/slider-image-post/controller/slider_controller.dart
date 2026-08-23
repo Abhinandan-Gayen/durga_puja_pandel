@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:durga_puja_pandel/models/pandal_model.dart';
 import 'package:durga_puja_pandel/views/admin/slider-image-post/model/slider_model.dart';
 import 'package:flutter/foundation.dart';
 
@@ -8,15 +9,19 @@ class SliderController extends ChangeNotifier {
   SliderController({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance {
     listenToSliders();
+    listenToSliderPandals();
   }
 
   final FirebaseFirestore _firestore;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sliderSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _sliderPandalSubscription;
 
   final List<SliderModel> _sliders = [];
+  final List<PandalModel> _sliderPandals = [];
 
   List<SliderModel> get sliders => List.unmodifiable(_sliders);
+  List<PandalModel> get sliderPandals => List.unmodifiable(_sliderPandals);
 
   bool isLoading = false;
   bool isUploading = false;
@@ -294,10 +299,29 @@ class SliderController extends ChangeNotifier {
     }
   }
 
+  void listenToSliderPandals() {
+    _sliderPandalSubscription?.cancel();
+    _sliderPandalSubscription = _firestore
+        .collection('slider_pandals')
+        .snapshots()
+        .listen(
+          (QuerySnapshot<Map<String, dynamic>> snapshot) {
+            _sliderPandals
+              ..clear()
+              ..addAll(snapshot.docs.map(PandalModel.fromFirestore));
+            _safeNotifyListeners();
+          },
+          onError: (Object error) {
+            debugPrint('Slider pandals listener error: $error');
+          },
+        );
+  }
+
   @override
   void dispose() {
     _disposed = true;
     _sliderSubscription?.cancel();
+    _sliderPandalSubscription?.cancel();
     super.dispose();
   }
 }

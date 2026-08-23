@@ -1,4 +1,4 @@
-import 'package:durga_puja_pandel/views/admin/slider-image-post/ui/upload_slider_screen.dart';
+import 'package:durga_puja_pandel/views/admin/manage_sliders_screen.dart';
 import 'package:durga_puja_pandel/views/admin/upcomingevent.dart';
 import 'package:durga_puja_pandel/views/admin/manage_upcomin_file.dart';
 import 'package:flutter/material.dart';
@@ -109,7 +109,17 @@ class AppRoutes {
     ),
     GetPage(
       name: '/admin/upload-media',
-      page: () => const UploadSliderScreen(),
+      page: () => const ManageSlidersScreen(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: '/admin/add-slider-pandal',
+      page: () => const AddPandalScreen(isSlider: true),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: '/admin/edit-slider-pandal/:id',
+      page: () => EditPandalScreen(pandalId: Get.parameters['id'] ?? '', isSlider: true),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

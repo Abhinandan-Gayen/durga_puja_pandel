@@ -68,7 +68,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
         context,
         listen: false,
       );
-      final activeSliders = sliderController.sliders
+      final activeSliders = sliderController.sliderPandals
           .where((s) => s.isActive)
           .toList();
       if (activeSliders.isEmpty) return;
@@ -1338,7 +1338,7 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
 
   Widget _buildBannerSlider() {
     final sliderController = context.watch<SliderController>();
-    final activeSliders = sliderController.sliders
+    final activeSliders = sliderController.sliderPandals
         .where((s) => s.isActive)
         .toList();
 
@@ -1370,38 +1370,43 @@ class _DurgaPujaHomeScreenState extends State<DurgaPujaHomeScreen> {
             },
             itemBuilder: (context, index) {
               final slider = activeSliders[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
-                    imageUrl: slider.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: const Color(0xFFE9D8C6).withValues(alpha: 0.3),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: primaryRed,
-                          strokeWidth: 2,
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed('/pandal/${slider.id}?isSlider=true');
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: slider.thumbnailUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: const Color(0xFFE9D8C6).withValues(alpha: 0.3),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: primaryRed,
+                            strokeWidth: 2,
+                          ),
                         ),
                       ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: const Color(0xFFE9D8C6).withValues(alpha: 0.3),
-                      child: const Icon(
-                        Icons.broken_image_rounded,
-                        color: Colors.grey,
-                        size: 40,
+                      errorWidget: (context, url, error) => Container(
+                        color: const Color(0xFFE9D8C6).withValues(alpha: 0.3),
+                        child: const Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.grey,
+                          size: 40,
+                        ),
                       ),
                     ),
                   ),

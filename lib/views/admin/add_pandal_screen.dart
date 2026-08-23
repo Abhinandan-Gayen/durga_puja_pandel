@@ -15,18 +15,20 @@ import '../../models/pandal_model.dart';
 import 'location_picker_screen.dart';
 
 class AddPandalScreen extends StatelessWidget {
-  const AddPandalScreen({super.key});
+  const AddPandalScreen({super.key, this.isSlider = false});
+  final bool isSlider;
 
   @override
   Widget build(BuildContext context) {
-    return const PandalFormScreen();
+    return PandalFormScreen(isSlider: isSlider);
   }
 }
 
 class PandalFormScreen extends StatefulWidget {
-  const PandalFormScreen({super.key, this.initialPandal});
+  const PandalFormScreen({super.key, this.initialPandal, this.isSlider = false});
 
   final PandalModel? initialPandal;
+  final bool isSlider;
 
   @override
   State<PandalFormScreen> createState() => _PandalFormScreenState();
@@ -385,68 +387,109 @@ class _PandalFormScreenState extends State<PandalFormScreen>
     );
     final admin = context.read<AdminPandalController>();
     try {
-      if (initial.id.isEmpty) {
-        final result = await admin.createPandal(
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim(),
-          district: _city == 'Others' ? _otherCityController.text.trim() : _city,
-          address: _addressController.text.trim(),
-          imageUrl: thumbnailUrl,
-          latitude: lat != 0.0 ? lat : null,
-          longitude: lng != 0.0 ? lng : null,
-        );
+      if (widget.isSlider) {
+        if (initial.id.isEmpty) {
+          final docId = await admin.addSliderPandal(pandal);
+          if (!mounted) return;
+          if (docId != null) {
+            _nameController.clear();
+            _areaController.clear();
+            _addressController.clear();
+            _descriptionController.clear();
+            _latitudeController.clear();
+            _longitudeController.clear();
+            _otherCityController.clear();
+            _themeNameController.clear();
+            _organizerNameController.clear();
+            _openingTimeController.clear();
+            _closingTimeController.clear();
+            _entryFeeController.clear();
+            _nearbyTransportController.clear();
+            _thumbnailUrlController.clear();
+            _galleryUrlsController.clear();
+            _videoUrlsController.clear();
 
-        if (!mounted) return;
-
-        final notification = result['notification'];
-        final notificationSent =
-            notification is Map && notification['sent'] == true;
-
-        if (result['success'] == true) {
-          _nameController.clear();
-          _areaController.clear();
-          _addressController.clear();
-          _descriptionController.clear();
-          _latitudeController.clear();
-          _longitudeController.clear();
-          _otherCityController.clear();
-          _themeNameController.clear();
-          _organizerNameController.clear();
-          _openingTimeController.clear();
-          _closingTimeController.clear();
-          _entryFeeController.clear();
-          _nearbyTransportController.clear();
-          _thumbnailUrlController.clear();
-          _galleryUrlsController.clear();
-          _videoUrlsController.clear();
-
-          _formKey.currentState?.reset();
-          FocusScope.of(context).unfocus();
-
-          if (notificationSent) {
-            SnackbarHelper.showSuccess(
-              context,
-              "Pandal posted and notification sent successfully",
-            );
+            _formKey.currentState?.reset();
+            FocusScope.of(context).unfocus();
+            SnackbarHelper.showSuccess(context, "Slider Pandal added successfully");
+            Navigator.of(context).pop();
           } else {
-            SnackbarHelper.showSuccess(
-              context,
-              "Pandal posted, but notification could not be sent",
-            );
+            SnackbarHelper.showError(context, admin.errorMessage ?? 'Slider creation failed');
           }
         } else {
-          final message = result['message'] ?? 'Pandal creation failed';
-          SnackbarHelper.showError(context, message);
+          await admin.updateSliderPandal(pandal);
+          if (!mounted) return;
+          if (admin.errorMessage != null) {
+            SnackbarHelper.showError(context, admin.errorMessage!);
+            return;
+          }
+          SnackbarHelper.showSuccess(context, 'Slider Pandal saved');
+          Navigator.of(context).pop();
         }
       } else {
-        await admin.updatePandal(pandal);
-        if (!mounted) return;
-        if (admin.errorMessage != null) {
-          SnackbarHelper.showError(context, admin.errorMessage!);
-          return;
+        if (initial.id.isEmpty) {
+          final result = await admin.createPandal(
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            district: _city == 'Others' ? _otherCityController.text.trim() : _city,
+            address: _addressController.text.trim(),
+            imageUrl: thumbnailUrl,
+            latitude: lat != 0.0 ? lat : null,
+            longitude: lng != 0.0 ? lng : null,
+          );
+
+          if (!mounted) return;
+
+          final notification = result['notification'];
+          final notificationSent =
+              notification is Map && notification['sent'] == true;
+
+          if (result['success'] == true) {
+            _nameController.clear();
+            _areaController.clear();
+            _addressController.clear();
+            _descriptionController.clear();
+            _latitudeController.clear();
+            _longitudeController.clear();
+            _otherCityController.clear();
+            _themeNameController.clear();
+            _organizerNameController.clear();
+            _openingTimeController.clear();
+            _closingTimeController.clear();
+            _entryFeeController.clear();
+            _nearbyTransportController.clear();
+            _thumbnailUrlController.clear();
+            _galleryUrlsController.clear();
+            _videoUrlsController.clear();
+
+            _formKey.currentState?.reset();
+            FocusScope.of(context).unfocus();
+
+            if (notificationSent) {
+              SnackbarHelper.showSuccess(
+                context,
+                "Pandal posted and notification sent successfully",
+              );
+            } else {
+              SnackbarHelper.showSuccess(
+                context,
+                "Pandal posted, but notification could not be sent",
+              );
+            }
+          } else {
+            final message = result['message'] ?? 'Pandal creation failed';
+            SnackbarHelper.showError(context, message);
+          }
+        } else {
+          await admin.updatePandal(pandal);
+          if (!mounted) return;
+          if (admin.errorMessage != null) {
+            SnackbarHelper.showError(context, admin.errorMessage!);
+            return;
+          }
+          SnackbarHelper.showSuccess(context, 'Pandal saved');
+          Navigator.of(context).pop();
         }
-        SnackbarHelper.showSuccess(context, 'Pandal saved');
-        Navigator.of(context).pop();
       }
     } catch (e) {
       if (!mounted) return;

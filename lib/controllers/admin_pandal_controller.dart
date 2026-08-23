@@ -246,4 +246,124 @@ class AdminPandalController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  List<PandalModel> adminSliders = [];
+
+  Future<void> fetchAllSliderPandals() async {
+    _isFetching = true;
+    errorMessage = null;
+    isLoading = true;
+    notifyListeners();
+    try {
+      final data = await _firestoreService.getCollection(
+        collectionPath: 'slider_pandals',
+      );
+      adminSliders = data.map(PandalModel.fromMap).toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      errorMessage = null;
+    } catch (e) {
+      errorMessage = e.toString();
+    } finally {
+      _isFetching = false;
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> addSliderPandal(PandalModel pandal) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final docId = await _firestoreService.addDocument(
+        collectionPath: 'slider_pandals',
+        data: pandal.toMap(),
+      );
+      await fetchAllSliderPandals();
+      return docId;
+    } catch (error) {
+      errorMessage = error.toString();
+      return null;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateSliderPandal(PandalModel pandal) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      await _firestoreService.updateDocument(
+        collectionPath: 'slider_pandals',
+        documentId: pandal.id,
+        data: pandal.toMap(),
+      );
+      await fetchAllSliderPandals();
+    } catch (error) {
+      errorMessage = error.toString();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteSliderPandal(String id) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      await _firestoreService.deleteDocument(
+        collectionPath: 'slider_pandals',
+        documentId: id,
+      );
+      await fetchAllSliderPandals();
+    } catch (error) {
+      errorMessage = error.toString();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleSliderActiveStatus(PandalModel pandal, bool value) async {
+    _updatingPandalId = pandal.id;
+    _updatingStatusField = 'isActive';
+    notifyListeners();
+    try {
+      await _firestoreService.updateDocument(
+        collectionPath: 'slider_pandals',
+        documentId: pandal.id,
+        data: {'isActive': value},
+      );
+      await fetchAllSliderPandals();
+    } catch (error) {
+      errorMessage = error.toString();
+    } finally {
+      _updatingPandalId = null;
+      _updatingStatusField = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleSliderFeaturedStatus(PandalModel pandal, bool value) async {
+    _updatingPandalId = pandal.id;
+    _updatingStatusField = 'isFeatured';
+    notifyListeners();
+    try {
+      await _firestoreService.updateDocument(
+        collectionPath: 'slider_pandals',
+        documentId: pandal.id,
+        data: {'isFeatured': value},
+      );
+      await fetchAllSliderPandals();
+    } catch (error) {
+      errorMessage = error.toString();
+    } finally {
+      _updatingPandalId = null;
+      _updatingStatusField = null;
+      notifyListeners();
+    }
+  }
 }
