@@ -9,6 +9,7 @@ class EventModel {
   final String time;
   final bool notification;
   final DateTime? createdAt;
+  final DateTime? eventDate;
 
   EventModel({
     required this.id,
@@ -19,6 +20,7 @@ class EventModel {
     required this.time,
     this.notification = true,
     this.createdAt,
+    this.eventDate,
   });
 
   factory EventModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -32,6 +34,7 @@ class EventModel {
       time: data['time'] ?? '',
       notification: data['notification'] ?? true,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      eventDate: (data['eventDate'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -44,6 +47,7 @@ class EventModel {
       'time': time,
       'notification': notification,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'eventDate': eventDate != null ? Timestamp.fromDate(eventDate!) : null,
     };
   }
 }

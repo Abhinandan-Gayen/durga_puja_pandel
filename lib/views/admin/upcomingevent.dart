@@ -136,6 +136,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
         subtitle: subtitleController.text,
         time: '${selectedTime.format(context)} Onwards',
         notification: notificationEnabled,
+        eventDate: selectedDate,
       );
     } else {
       // ── ADD mode ──
@@ -146,6 +147,7 @@ class _AddFestivalScreenState extends State<AddFestivalScreen> {
         subtitle: subtitleController.text,
         time: '${selectedTime.format(context)} Onwards',
         notification: notificationEnabled,
+        eventDate: selectedDate,
       );
     }
 

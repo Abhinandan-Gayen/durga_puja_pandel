@@ -35,9 +35,25 @@ class EventController extends ChangeNotifier {
         .snapshots()
         .listen(
       (QuerySnapshot<Map<String, dynamic>> snapshot) {
+        final now = DateTime.now();
+        final todayStart = DateTime(now.year, now.month, now.day);
+        final List<EventModel> activeList = [];
+
+        for (final doc in snapshot.docs) {
+          final event = EventModel.fromFirestore(doc);
+          final eventDate = event.eventDate ?? _reconstructEventDate(event);
+
+          if (eventDate.isBefore(todayStart)) {
+            // Delete expired event from database
+            deleteEvent(event.id);
+          } else {
+            activeList.add(event);
+          }
+        }
+
         _events
           ..clear()
-          ..addAll(snapshot.docs.map(EventModel.fromFirestore));
+          ..addAll(activeList);
         isLoading = false;
         errorMessage = null;
         _safeNotifyListeners();
@@ -51,12 +67,25 @@ class EventController extends ChangeNotifier {
     );
   }
 
+  DateTime _reconstructEventDate(EventModel event) {
+    final now = DateTime.now();
+    const monthAbbreviations = [
+      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    ];
+    final monthIndex = monthAbbreviations.indexOf(event.month.toUpperCase());
+    final month = monthIndex >= 0 ? monthIndex + 1 : now.month;
+    final day = int.tryParse(event.date) ?? now.day;
+    return DateTime(now.year, month, day);
+  }
+
   Future<bool> addEvent({
     required String month,
     required String date,
     required String title,
     required String subtitle,
     required String time,
+    required DateTime eventDate,
     bool notification = true,
   }) async {
     final String cleanMonth = month.trim();
@@ -81,6 +110,7 @@ class EventController extends ChangeNotifier {
         'subtitle': subtitle.trim(),
         'time': time.trim(),
         'notification': notification,
+        'eventDate': Timestamp.fromDate(eventDate),
         'createdAt': FieldValue.serverTimestamp(),
       });
       return true;
@@ -112,6 +142,7 @@ class EventController extends ChangeNotifier {
     required String subtitle,
     required String time,
     required bool notification,
+    required DateTime eventDate,
   }) async {
     try {
       await _eventCollection.doc(id).update({
@@ -121,6 +152,7 @@ class EventController extends ChangeNotifier {
         'subtitle': subtitle.trim(),
         'time': time.trim(),
         'notification': notification,
+        'eventDate': Timestamp.fromDate(eventDate),
       });
       return true;
     } catch (error) {
